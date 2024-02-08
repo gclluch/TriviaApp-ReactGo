@@ -1,5 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./App.css";
+import StartGameButton from './StartGameButton';
+import QuestionDisplay from './QuestionDisplay';
+import ScoreDisplay from './ScoreDisplay';
+import LoadingIndicator from './LoadingIndicator';
+import ErrorMessage from './ErrorMessage';
 
 // Use REACT_APP_BACKEND_URL or http://localhost:8080 as the API_BASE
 const API_BASE = process.env.REACT_APP_BACKEND_URL || "http://localhost:8080";
@@ -11,6 +16,17 @@ function App() {
   const [score, setScore] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // The most important feature - Dark Mode!
+  const [theme, setTheme] = useState('dark'); // Default theme
+
+  const toggleTheme = () => {
+    setTheme((currentTheme) => (currentTheme === 'light' ? 'dark' : 'light'));
+  };
+
+  useEffect(() => {
+    document.body.setAttribute('data-theme', theme);
+  }, [theme]);
 
   const startGame = async () => {
     setLoading(true);
@@ -43,9 +59,11 @@ function App() {
     setLoading(false);
   };
 
-  const submitAnswer = async (index) => {
-    // We are submitting the index
-    setLoading(true);
+  // modified to return function that takes index as argument.
+  // this way we can call submitAnswer from QuestionDisplay.js
+  // without creating new function every render
+  const submitAnswer = (index) => async () => {
+    // setLoading(true);
     const currentQuestion = questions[currentQuestionIndex];
     try {
       const res = await fetch(`${API_BASE}/answer`, {
@@ -55,13 +73,13 @@ function App() {
         },
         body: JSON.stringify({
           sessionId: gameSession,
-          questionId: currentQuestion.id, // field name is "id", not "questionId"
+          questionId: currentQuestion.id,
           answer: index,
         }),
       });
       const data = await res.json();
       if (data.correct) {
-        setScore(data.currentScore); // Update score from server's response
+        setScore(data.currentScore);
       }
       if (currentQuestionIndex < questions.length - 1) {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
@@ -71,7 +89,7 @@ function App() {
     } catch (err) {
       setError("Failed to submit answer.");
     }
-    setLoading(false);
+    // setLoading(false);
   };
 
   const endGame = async () => {
@@ -98,28 +116,31 @@ function App() {
     setLoading(false);
   };
 
-  if (error) return <div className="error">Error: {error}</div>;
-  if (loading) return <div className="loading">Loading...</div>;
+  // consider only loading in certain cases to avoid loading icon
+  if (loading) return <LoadingIndicator />;
+
+
+  if (error) return <ErrorMessage message={error} />;
 
   return (
     <div className="App">
-      {!gameSession ? (
-        <button onClick={startGame}>Start Game</button>
-      ) : (
-        <div>
-          <h3>{questions[currentQuestionIndex]?.questionText}</h3>
-          {questions[currentQuestionIndex]?.options.map((option, index) => (
-            <button
-              key={index} // Key should be unique for each child in a list, use index as the key
-              onClick={() => submitAnswer(index)} // Pass index instead of option
-              className="option-button"
-            >
-              {option}
-            </button>
-          ))}
-          <p className="score">Score: {score}</p>
-        </div>
-      )}
+      <button onClick={toggleTheme} className="toggle-theme-button">
+      Toggle Theme
+      </button>
+      <main>
+        {!gameSession ? (
+          <StartGameButton onStart={startGame} />
+        ) : (
+          <div>
+            <QuestionDisplay
+              question={questions[currentQuestionIndex]?.questionText}
+              options={questions[currentQuestionIndex]?.options}
+              onAnswer={submitAnswer}
+            />
+            <ScoreDisplay score={score}/>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
