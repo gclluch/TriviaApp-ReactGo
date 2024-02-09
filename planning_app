@@ -1,0 +1,56 @@
+## CapTrivia Multiplayer Game Plan
+
+### Part 1: Refactor and Enhance Codebase
+
+#### Backend (Go)
+
+- **Organize Into Packages**
+  - `models` for data structures (`Question`, `PlayerSession`).
+  - `handlers` for HTTP handlers (`StartGameHandler`, `QuestionsHandler`).
+  - `services` for business logic.
+  - `store` for database interactions.
+  - `config` for configuration settings.
+
+- **Database Integration**
+  - Transition from in-memory to PostgreSQL database.
+  - Create necessary tables and integrate with the backend.
+
+#### Frontend (React)
+
+- **Componentize UI**
+  - Break down `App.js` into smaller components for readability and reuse.
+
+- **State Management**
+  - Use Context API or Redux for managing complex state.
+
+- **Styling and Responsiveness**
+  - Ensure UI responsiveness and consider using a CSS framework.
+
+### Part 2: Implement Multiplayer Functionality
+
+#### Backend Enhancements
+
+- **WebSocket Integration**
+  - Use WebSockets for real-time communication between players and server.
+
+- **Multiplayer Game Sessions**
+  - Support for multiple players per session, including unique game links and synchronization.
+
+- **Gameplay Logic**
+  - Implement logic for countdowns, question answering, and scoring.
+
+#### Frontend Enhancements
+
+- **Real-Time Communication**
+  - Implement WebSockets on the frontend for real-time updates.
+
+- **Multiplayer UI Components**
+  - Lobby/Waiting Room, Countdown Timer, Real-Time Answer Submission, Scoreboard.
+
+- **Navigation and Routing**
+  - Use React Router for managing different views.
+
+### Technical Considerations
+
+- **Testing**
+  - Implement unit tests for both backend (Go) and frontend 

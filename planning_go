@@ -1,0 +1,70 @@
+## Go Backend Refactoring Plan
+
+### Code Organization
+
+- **Separate Concerns into Packages**
+  - `handlers` for HTTP handlers.
+  - `models` for data structures like `Question`.
+  - `services` for business logic, such as session management and scoring.
+  - `store` for database interactions.
+  - `config` for configuration settings.
+
+### Improve Session Management
+
+- **Database Persistence**
+  - Persist sessions in a database to support scalability and prevent data loss.
+
+### Use a Database for Questions
+
+- **Database Management of Questions**
+  - Store questions in a database for dynamic updates and easier management.
+
+### Remove Global State
+
+- **Safe Random Number Generation**
+  - Use local instances of the random generator or seed once to ensure thread safety.
+
+### Concurrency
+
+- **Idiomatic Go Concurrency**
+  - Utilize channels or `sync.Map` for more efficient concurrency control.
+
+### Error Handling
+
+- **Custom Error Types**
+  - Create and handle custom errors to provide clear client feedback.
+
+### Testing
+
+- **Unit Testing**
+  - Develop unit tests for handlers and business logic to ensure reliability.
+
+### Security
+
+- **Secure Session IDs**
+  - Generate secure, unpredictable session IDs to enhance security.
+
+### Dependency Injection
+
+- **Decouple Code**
+  - Use constructor functions to pass dependencies like session stores to handlers.
+
+### Logging and Monitoring
+
+- **Structured Logging**
+  - Implement structured logging for requests and errors to facilitate monitoring.
+
+### Configuration
+
+- **External Configuration**
+  - Utilize configuration files or environment variables for flexible settings.
+
+### Graceful Shutdown
+
+- **Safe Server Termination**
+  - Implement graceful shutdown logic to handle server stops smoothly.
+
+### Update Libraries
+
+- **Modernize Codebase**
+  - Replace `ioutil.ReadFile` with `os.ReadFile` following Go 1.16 updates.

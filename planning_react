@@ -1,0 +1,73 @@
+## React Frontend Refactoring Plan
+
+### Componentization and Structure (DONE)
+
+- **Break Down into Components** (DONE)
+  - Split `App.js` into smaller, reusable components for better maintainability.
+    - `StartGameButton` for initiating a new game.
+    - `QuestionDisplay` for showing current question and options.
+    - `ScoreDisplay` for showing the player's score.
+    - `LoadingIndicator` for displaying a loading state.
+    - `ErrorMessage` for showing error messages.
+
+- **Use of Component Props** (DONE)
+  - Pass necessary data to child components through props to maintain a unidirectional data flow.
+
+### State Management (DONE)
+
+- **Local vs. Global State** (DONE)
+  - Evaluate if any state can be lifted up or needs to be shared across components. If so, consider using Context API or Redux for global state management.
+
+- **Custom Hooks**
+  - Create custom hooks for fetching data from the backend to encapsulate and reuse logic.
+
+### Styling and Layout
+
+- **CSS Modules or Styled Components**
+  - Use CSS Modules or styled-components for component-scoped styling to avoid styling conflicts and enhance maintainability.
+
+- **Responsive Design**
+  - Ensure the UI is responsive and provides a good user experience across different device sizes.
+
+### Performance Optimization (DONE - onSubmit change)
+
+- **React.memo and useCallback** (NOT NECESSARY)
+  - Utilize `React.memo` for memoizing components and `useCallback` to memoize callbacks to prevent unnecessary re-renders.
+
+- **Lazy Loading**
+  - Implement lazy loading for components that are not immediately needed using `React.lazy` and `Suspense`.
+
+### Error Handling and User Feedback
+
+- **Graceful Error Handling**
+  - Implement robust error handling in the UI to catch and display error states gracefully.
+
+- **User Feedback**
+  - Provide immediate feedback for user actions (e.g., loading states, success/error messages).
+
+### Accessibility (ARIAS ADDED)
+
+- **Accessibility (a11y) Enhancements**
+  - Ensure that the application is accessible by following best practices, such as semantic HTML, keyboard navigation, and ARIA attributes.
+
+### Testing
+
+- **Unit and Integration Tests**
+  - Write unit tests for individual components and integration tests for component interactions using libraries like Jest and React Testing Library.
+
+### Documentation and Comments
+
+- **Component Documentation**
+  - Document each component's props and intended use cases for better collaboration and future reference.
+
+- **Code Comments**
+  - Add meaningful comments to complex logic to enhance code readability and maintainability.
+
+### Version Control and Deployment
+
+- **Branching Strategy**
+  - Adopt a consistent branching strategy for features, fixes, and releases to manage codebase changes effectively.
+
+- **Continuous Integration/Continuous Deployment (CI/CD)**
+  - Set up CI/CD pipelines to automate testing and deployment processes.
+

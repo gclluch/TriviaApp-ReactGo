@@ -146,4 +146,12 @@ div.error {
     }
   }
 
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh; /* Full viewport height */
+  background-color: var(--background-color); /* Use the background-color variable for theming */
+}
+
 /* Additional elements like modals, alerts, etc. could be styled here. */
