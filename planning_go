@@ -1,8 +1,8 @@
 ## Go Backend Refactoring Plan
 
-### Code Organization
+### Code Organization (DONE)
 
-- **Separate Concerns into Packages**
+- **Separate Concerns into Packages** (DONE)
   - `handlers` for HTTP handlers.
   - `models` for data structures like `Question`.
   - `services` for business logic, such as session management and scoring.

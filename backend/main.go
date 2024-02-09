@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/gclluch/captrivia_multiplayer/db"
 	"github.com/gclluch/captrivia_multiplayer/handlers"
 	"github.com/gclluch/captrivia_multiplayer/models"
 	"github.com/gclluch/captrivia_multiplayer/store"
@@ -14,6 +15,13 @@ import (
 )
 
 func main() {
+
+	// Initialize the database connection
+	err := db.SetupDatabase() // Initialize the database connection
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+
 	// Initialize the store.
 	sessionStore := store.NewSessionStore()
 
