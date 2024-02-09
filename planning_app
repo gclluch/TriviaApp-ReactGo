@@ -1,3 +1,14 @@
+Refactor and Enhance:
+  The current code is intentionally basic and contained in single files for both front and back ends. Your first task is to clean up and structure the codebase.
+
+Implement Multiplayer Functionality:
+- Allow users to start a new game and generate a shareable link.
+- Enable real-time joining of players in a waiting room.
+- Implement a countdown and start the game simultaneously for all players.
+- Introduce a scoring system with a configurable number of questions (default: 10).
+- Players will compete to answer each question first. For each question, the player who answers first gets the points.
+- Display the winner at the end and allow users to start new games.
+
 ## CapTrivia Multiplayer Game Plan
 
 ### Part 1: Refactor and Enhance Codebase
@@ -53,4 +64,4 @@
 ### Technical Considerations
 
 - **Testing**
-  - Implement unit tests for both backend (Go) and frontend 
+  - Implement unit tests for both backend (Go) and frontend
