@@ -1,0 +1,67 @@
+Refactor and Enhance:
+  The current code is intentionally basic and contained in single files for both front and back ends. Your first task is to clean up and structure the codebase.
+
+Implement Multiplayer Functionality:
+- Allow users to start a new game and generate a shareable link.
+- Enable real-time joining of players in a waiting room.
+- Implement a countdown and start the game simultaneously for all players.
+- Introduce a scoring system with a configurable number of questions (default: 10).
+- Players will compete to answer each question first. For each question, the player who answers first gets the points.
+- Display the winner at the end and allow users to start new games.
+
+## CapTrivia Multiplayer Game Plan
+
+### Part 1: Refactor and Enhance Codebase
+
+#### Backend (Go)
+
+- **Organize Into Packages**
+  - `models` for data structures (`Question`, `PlayerSession`).
+  - `handlers` for HTTP handlers (`StartGameHandler`, `QuestionsHandler`).
+  - `services` for business logic.
+  - `store` for database interactions.
+  - `config` for configuration settings.
+
+- **Database Integration**
+  - Transition from in-memory to PostgreSQL database.
+  - Create necessary tables and integrate with the backend.
+
+#### Frontend (React)
+
+- **Componentize UI**
+  - Break down `App.js` into smaller components for readability and reuse.
+
+- **State Management**
+  - Use Context API or Redux for managing complex state.
+
+- **Styling and Responsiveness**
+  - Ensure UI responsiveness and consider using a CSS framework.
+
+### Part 2: Implement Multiplayer Functionality
+
+#### Backend Enhancements
+
+- **WebSocket Integration**
+  - Use WebSockets for real-time communication between players and server.
+
+- **Multiplayer Game Sessions**
+  - Support for multiple players per session, including unique game links and synchronization.
+
+- **Gameplay Logic**
+  - Implement logic for countdowns, question answering, and scoring.
+
+#### Frontend Enhancements
+
+- **Real-Time Communication**
+  - Implement WebSockets on the frontend for real-time updates.
+
+- **Multiplayer UI Components**
+  - Lobby/Waiting Room, Countdown Timer, Real-Time Answer Submission, Scoreboard.
+
+- **Navigation and Routing**
+  - Use React Router for managing different views.
+
+### Technical Considerations
+
+- **Testing**
+  - Implement unit tests for both backend (Go) and frontend

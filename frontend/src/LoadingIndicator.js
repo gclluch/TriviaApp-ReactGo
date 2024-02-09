@@ -2,7 +2,7 @@
 import React from 'react';
 
 const LoadingIndicator = () => (
-  <div className="App">
+  <div className="loading-container">
     <div aria-live="polite" className="loading">Loading...</div>
   </div>
 );
