@@ -1,4 +1,4 @@
-module github.com/ProlificLabs/captrivia
+module github.com/gclluch/captrivia_multiplayer
 
 go 1.21.4
 

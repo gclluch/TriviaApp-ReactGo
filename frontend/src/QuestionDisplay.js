@@ -13,11 +13,14 @@ const QuestionDisplay = ({ question, options, onAnswer }) => (
   </div>
 );
 
+QuestionDisplay.defaultProps = {
+  options: [], // Default to an empty array if options prop isn't provided
+};
+
 QuestionDisplay.propTypes = {
-  question: PropTypes.string.isRequired,
+  question: PropTypes.string,
   options: PropTypes.arrayOf(PropTypes.string).isRequired,
   onAnswer: PropTypes.func.isRequired,
 };
-
 
 export default QuestionDisplay;

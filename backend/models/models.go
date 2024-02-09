@@ -1,6 +1,6 @@
 package models
 
-// Question represents a trivia question, its options, and the index of the correct answer.
+// Question represents a single trivia question with multiple choice answers.
 type Question struct {
 	ID           string   `json:"id"`
 	QuestionText string   `json:"questionText"`
@@ -8,8 +8,14 @@ type Question struct {
 	CorrectIndex int      `json:"correctIndex"`
 }
 
-// PlayerSession represents a single player's game session, including their score.
+// PlayerSession holds the state of a player's session including their score.
 type PlayerSession struct {
-	ID    string `json:"id"` // This could be used for identifying the session
 	Score int
+}
+
+// AnswerSubmission represents the payload for a player's answer submission.
+type AnswerSubmission struct {
+	SessionID  string `json:"sessionId"`
+	QuestionID string `json:"questionId"`
+	Answer     int    `json:"answer"`
 }
