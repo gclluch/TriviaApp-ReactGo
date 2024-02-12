@@ -8,9 +8,19 @@ type Question struct {
 	CorrectIndex int      `json:"correctIndex"`
 }
 
+// Player represents a player in the game.
+type Player struct {
+	ID    string
+	Score int
+	// Consider adding a WebSocket connection pointer here for direct messaging
+
+}
+
 // PlayerSession holds the state of a player's session including their score.
 type PlayerSession struct {
-	Score int
+	Score   int
+	Players map[string]*Player // Keyed by player ID
+	// Add more fields as needed (e.g., current question index)
 }
 
 // AnswerSubmission represents the payload for a player's answer submission.

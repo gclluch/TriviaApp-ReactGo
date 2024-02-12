@@ -1,0 +1,32 @@
+### Backend Changes (Go)
+
+#### Session Management:
+- Modify the `PlayerSession` model to support multiplayer features, such as storing multiple player scores within a session and tracking the current question.
+- Implement logic for a "waiting room" where players can join before the game starts.
+
+#### Real-time Communication:
+- Use WebSockets for real-time server-client communication, enabling simultaneous updates for all players when a new question is asked, answered, or the game ends.
+- Utilize the `github.com/gorilla/websocket` package for WebSocket integration with Gin.
+
+#### Game Flow:
+- Adjust `StartGameHandler` to manage multiple connections, starting the game only once all players have joined or upon meeting a predefined start condition.
+- Implement a countdown mechanism to ensure all players start the game simultaneously.
+- Modify `AnswerHandler` to provide real-time score updates and broadcast these to all players.
+
+#### Shareable Link Generation:
+- Generate a unique URL or game code for sessions, allowing players to share and invite others. This could be as simple as using the session ID.
+
+### Frontend Changes (React)
+
+#### Lobby/Waiting Room:
+- Develop a new component acting as a waiting room for players to gather before the game begins.
+- Display a list of connected players and include functionality to start the game once readiness criteria are met.
+
+#### Real-time Updates:
+- Implement WebSocket support on the client-side for real-time communication with the backend. This involves using the WebSocket API to connect, listen for messages (game start, new question, score updates), and send answers.
+
+#### Gameplay Enhancements:
+- Update the UI to dynamically reflect game progress, including displaying questions to all players at the same time and updating scores based on real-time answer submissions.
+
+#### Shareable Link:
+- Create functionality to generate and display a shareable link or game code for the session, enabling player invitations.

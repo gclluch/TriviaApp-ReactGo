@@ -4,24 +4,18 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 
-	"github.com/gclluch/captrivia_multiplayer/db"
 	"github.com/gclluch/captrivia_multiplayer/handlers"
 	"github.com/gclluch/captrivia_multiplayer/models"
 	"github.com/gclluch/captrivia_multiplayer/store"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 )
 
 func main() {
-
-	// Initialize the database connection
-	err := db.SetupDatabase() // Initialize the database connection
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
-	}
-
 	// Initialize the store.
 	sessionStore := store.NewSessionStore()
 
@@ -51,6 +45,9 @@ func main() {
 	router.POST("/answer", gameServer.AnswerHandler)
 	router.POST("/game/end", gameServer.EndGameHandler)
 
+	// Register the WebSocket endpoint.
+	router.GET("/ws", websocketEndpoint)
+
 	// Start the HTTP server.
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -79,4 +76,35 @@ func loadQuestions() ([]models.Question, error) {
 	}
 
 	return questions, nil
+}
+
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true // Allow all CORS origins
+	},
+}
+
+func websocketEndpoint(c *gin.Context) {
+	w, r := c.Writer, c.Request
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println("Failed to upgrade to WebSocket:", err)
+		return
+	}
+	defer conn.Close()
+
+	// Handle WebSocket communication here
+	for {
+		messageType, p, err := conn.ReadMessage()
+		if err != nil {
+			log.Println("Read error:", err)
+			break
+		}
+		log.Printf("Received: %s", p)
+		// Echo the message back
+		if err := conn.WriteMessage(messageType, p); err != nil {
+			log.Println("Write error:", err)
+			break
+		}
+	}
 }

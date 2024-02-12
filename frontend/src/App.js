@@ -28,6 +28,23 @@ function App() {
     document.body.setAttribute('data-theme', theme);
   }, [theme]);
 
+  useEffect(() => {
+    const ws = new WebSocket('ws://localhost:8080/ws');
+
+    ws.onopen = () => {
+      console.log('Connected to the websocket server');
+      ws.send('Hello from the client!');
+    };
+
+    ws.onmessage = (event) => {
+      console.log('Received message from server: ', event.data);
+    };
+
+    return () => {  
+      ws.close();
+    };
+  }, []); 
+
   const startGame = async () => {
     setLoading(true);
     setError(null);
