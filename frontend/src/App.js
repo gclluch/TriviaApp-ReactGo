@@ -6,6 +6,11 @@ import ScoreDisplay from './ScoreDisplay';
 import LoadingIndicator from './LoadingIndicator';
 import ErrorMessage from './ErrorMessage';
 
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+// import JoinGameComponent from './JoinGameComponent'; // Ensure this import is correct
+import { useWebSocket } from './WebSocketContext'; // Import the useWebSocket hook
+
+
 // Use REACT_APP_BACKEND_URL or http://localhost:8080 as the API_BASE
 const API_BASE = process.env.REACT_APP_BACKEND_URL || "http://localhost:8080";
 
@@ -16,6 +21,8 @@ function App() {
   const [score, setScore] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [shareableLink, setShareableLink] = useState("");
+
 
   // The most important feature - Dark Mode!
   const [theme, setTheme] = useState('dark'); // Default theme
@@ -28,22 +35,46 @@ function App() {
     document.body.setAttribute('data-theme', theme);
   }, [theme]);
 
+  const webSocket = useWebSocket();
   useEffect(() => {
-    const ws = new WebSocket('ws://localhost:8080/ws');
+    if (!webSocket) return;
 
-    ws.onopen = () => {
-      console.log('Connected to the websocket server');
-      ws.send('Hello from the client!');
+    // ws.onopen = () => {
+    //   console.log('Connected to the websocket server');
+    //   ws.send('Hello from the client!');
+    // };
+
+    // ws.onmessage = (event) => {
+    //   console.log('Received message from server: ', event.data);
+    // };
+
+    webSocket.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      switch (message.type) {
+        case 'WAITING_ROOM_UPDATE':
+          // Handle waiting room updates
+          break;
+        case 'GAME_START':
+          // Handle game start, fetch questions if needed
+          break;
+        case 'QUESTION':
+          // Display the current question to players
+          break;
+        case 'SCORE_UPDATE':
+          // Update scores based on answers
+          break;
+        case 'GAME_END':
+          // Display the winner and handle game end
+          break;
+        default:
+          console.log('Received message from server: ', message);
+      }
     };
 
-    ws.onmessage = (event) => {
-      console.log('Received message from server: ', event.data);
-    };
-
-    return () => {  
-      ws.close();
-    };
-  }, []); 
+    // return () => {
+    //   ws.close();
+    // };
+  }, [webSocket]);
 
   const startGame = async () => {
     setLoading(true);
@@ -57,6 +88,8 @@ function App() {
       });
       const data = await res.json();
       setGameSession(data.sessionId);
+      setShareableLink(data.shareableLink); // Store the shareable link from the response
+      console.log(data.shareableLink);
       fetchQuestions();
     } catch (err) {
       setError("Failed to start game.");
@@ -160,6 +193,36 @@ function App() {
       </main>
     </div>
   );
+
+  // return (
+  //   <Router>
+  //     <div className="App">
+  //       <button onClick={toggleTheme} className="toggle-theme-button">
+  //         Toggle Theme
+  //       </button>
+  //       <Switch>
+  //         <Route path="/" exact>
+  //           <main>
+  //             {!gameSession ? (
+  //               <StartGameButton onStart={startGame} />
+  //             ) : (
+  //               <div>
+  //                 <QuestionDisplay
+  //                   question={questions[currentQuestionIndex]?.questionText}
+  //                   options={questions[currentQuestionIndex]?.options}
+  //                   onAnswer={submitAnswer}
+  //                 />
+  //                 <ScoreDisplay score={score}/>
+  //               </div>
+  //             )}
+  //           </main>
+  //         </Route>
+  //         <Route path="/join/:sessionId" component={JoinGameComponent} />
+  //       </Switch>
+  //     </div>
+  //   </Router>
+  // );
+
 }
 
 export default App;

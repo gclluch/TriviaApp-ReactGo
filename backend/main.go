@@ -44,6 +44,7 @@ func main() {
 	router.GET("/questions", gameServer.QuestionsHandler)
 	router.POST("/answer", gameServer.AnswerHandler)
 	router.POST("/game/end", gameServer.EndGameHandler)
+	router.GET("/join/:sessionId", gameServer.JoinGameHandler)
 
 	// Register the WebSocket endpoint.
 	router.GET("/ws", websocketEndpoint)

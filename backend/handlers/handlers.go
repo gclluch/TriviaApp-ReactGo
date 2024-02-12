@@ -7,6 +7,7 @@ import (
 	"github.com/gclluch/captrivia_multiplayer/services"
 	"github.com/gclluch/captrivia_multiplayer/store"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // GameServer encapsulates the game logic and data.
@@ -26,7 +27,15 @@ func NewGameServer(store *store.SessionStore, questions []models.Question) *Game
 // StartGameHandler handles requests to start a new game session.
 func (gs *GameServer) StartGameHandler(c *gin.Context) {
 	sessionID := gs.Store.CreateSession()
-	c.JSON(http.StatusOK, gin.H{"sessionId": sessionID, "message": "Game started successfully."})
+
+	// Generate a shareable link. This could be as simple as appending the session ID
+	// to a base URL. For real deployment, ensure your base URL matches your deployed frontend.
+	baseURL := "http://localhost:3000/join/"
+	shareableLink := baseURL + sessionID
+
+	c.JSON(http.StatusOK, gin.H{"sessionId": sessionID, "shareableLink": shareableLink, "message": "Game started successfully."})
+
+	// c.JSON(http.StatusOK, gin.H{"sessionId": sessionID, "message": "Game started successfully."})
 }
 
 // QuestionsHandler returns a set of questions for the game.
@@ -81,4 +90,25 @@ func (gs *GameServer) EndGameHandler(c *gin.Context) {
 		"message":    "Game ended successfully.",
 		"finalScore": session.Score,
 	})
+}
+
+// JoinSessionHandler handles requests to join an existing game session.
+func (gs *GameServer) JoinGameHandler(c *gin.Context) {
+	sessionId := c.Param("sessionId")
+
+	playerID := uuid.New().String() // Implement this function based on your ID generation strategy
+
+	player := &models.Player{
+		ID: playerID,
+	}
+
+	// Logic to add the player to the session
+	if session, exists := gs.Store.GetSession(sessionId); exists {
+		// Implement the logic to add a player to this session.
+		// This might involve creating a new Player instance and adding it to the session's Players map.
+		session.AddPlayer(player)
+		c.JSON(http.StatusOK, gin.H{"message": "Successfully joined the session"})
+	} else {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
+	}
 }
