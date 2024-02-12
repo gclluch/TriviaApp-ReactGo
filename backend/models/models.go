@@ -13,7 +13,6 @@ type Player struct {
 	ID    string
 	Score int
 	// Consider adding a WebSocket connection pointer here for direct messaging
-
 }
 
 // PlayerSession holds the state of a player's session including their score.

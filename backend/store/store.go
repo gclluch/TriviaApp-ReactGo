@@ -1,11 +1,10 @@
 package store
 
 import (
-	"crypto/rand"
-	"fmt"
 	"sync"
 
 	"github.com/gclluch/captrivia_multiplayer/models"
+	"github.com/google/uuid"
 )
 
 // SessionStore manages player sessions with thread-safe operations.
@@ -22,9 +21,10 @@ func NewSessionStore() *SessionStore {
 }
 
 func generateSessionID() string {
-	randBytes := make([]byte, 16)
-	rand.Read(randBytes)
-	return fmt.Sprintf("%x", randBytes)
+	// randBytes := make([]byte, 16)
+	// rand.Read(randBytes)
+	// return fmt.Sprintf("%x", randBytes)
+	return uuid.New().String()
 }
 
 // CreateSession generates a new session with a unique ID and initializes the score.
