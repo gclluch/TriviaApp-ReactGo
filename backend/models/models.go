@@ -1,6 +1,11 @@
 package models
 
-import "sync"
+import (
+	"log"
+	"sync"
+
+	"github.com/gorilla/websocket"
+)
 
 // Question represents a single trivia question with multiple choice answers.
 type Question struct {
@@ -14,6 +19,7 @@ type Question struct {
 type Player struct {
 	ID    string
 	Score int
+	Conn  *websocket.Conn // WebSocket connection for real-time updates
 	// Consider adding a WebSocket connection pointer here for direct messaging
 }
 
@@ -40,4 +46,25 @@ func (ps *PlayerSession) AddPlayer(player *Player) {
 		ps.Players = make(map[string]*Player)
 	}
 	ps.Players[player.ID] = player
+}
+
+// Assuming a basic structure for incoming WebSocket messages
+type WebSocketMessage struct {
+	Action    string `json:"action"`
+	SessionID string `json:"sessionId"`
+	PlayerID  string `json:"playerId"` // Optional, depending on your implementation
+}
+
+func (ps *PlayerSession) Broadcast(message interface{}) {
+	ps.Lock()
+	defer ps.Unlock()
+
+	for _, player := range ps.Players {
+		if player.Conn != nil {
+			if err := player.Conn.WriteJSON(message); err != nil {
+				log.Printf("Failed to send message to player %s: %v", player.ID, err)
+				// Consider handling disconnected clients
+			}
+		}
+	}
 }

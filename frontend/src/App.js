@@ -28,6 +28,7 @@ function App() {
             <Route path="/" element={<MainMenu />} />
             <Route path="/singleplayer" element={<SinglePlayerGame />} />
             <Route path="/multiplayer" element={<MultiplayerGame />} />
+            <Route path="/join/:sessionId" element={<MultiplayerGame />} />
           </Routes>
         </main>
       </div>

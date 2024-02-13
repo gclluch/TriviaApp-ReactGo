@@ -8,15 +8,26 @@ export const WebSocketProvider = ({ children }) => {
     const [webSocket, setWebSocket] = useState(null);
 
     useEffect(() => {
-        const ws = new WebSocket('ws://localhost:8080/ws');
+        let ws;
+        const connect = () => {
+            ws = new WebSocket('ws://localhost:8080/ws');
 
-        ws.onopen = () => console.log('WebSocket Connected');
-        ws.onclose = () => console.log('WebSocket Disconnected');
+            ws.onopen = () => console.log('WebSocket Connected');
+            ws.onclose = () => {
+                console.log('WebSocket Disconnected');
+                // setTimeout(connect, 3000); // Attempt to reconnect every 3 seconds
+            };
+            ws.onerror = (error) => console.log('WebSocket Error:', error);
 
-        setWebSocket(ws);
+            setWebSocket(ws);
+        };
+
+        connect();
 
         return () => {
-            ws.close();
+            if (ws) {
+                ws.close();
+            }
         };
     }, []);
 
