@@ -2,7 +2,6 @@ package game
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -26,22 +25,6 @@ func NewGameServer(store *store.SessionStore, questions []models.Question) *Game
 	}
 }
 
-func LoadQuestions(filename string) ([]models.Question, error) {
-	bytes, err := ioutil.ReadFile(filename)
-	if err != nil {
-		log.Printf("Error reading questions file: %v", err)
-		return nil, err
-	}
-
-	var questions []models.Question
-	if err := json.Unmarshal(bytes, &questions); err != nil {
-		log.Printf("Error unmarshalling questions: %v", err)
-		return nil, err
-	}
-
-	return questions, nil
-}
-
 // StartGameHandler handles requests to start a new game session.
 func (gs *GameServer) StartGameHandler(c *gin.Context) {
 	sessionID := gs.Store.CreateSession()
@@ -53,7 +36,6 @@ func (gs *GameServer) StartGameHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"sessionId": sessionID, "shareableLink": shareableLink, "message": "Game started successfully."})
 
-	// c.JSON(http.StatusOK, gin.H{"sessionId": sessionID, "message": "Game started successfully."})
 }
 
 // QuestionsHandler returns a set of questions for the game.

@@ -6,6 +6,7 @@ import (
 
 	"github.com/gclluch/captrivia_multiplayer/game"
 	"github.com/gclluch/captrivia_multiplayer/handlers"
+	"github.com/gclluch/captrivia_multiplayer/services"
 	"github.com/gclluch/captrivia_multiplayer/store"
 
 	"github.com/gin-contrib/cors"
@@ -25,14 +26,17 @@ func main() {
 
 	// Initialize the store.
 	sessionStore := store.NewSessionStore()
-	questions, err := game.LoadQuestions("questions.json")
+
+	// Prepare questions for game server.
+	questions, err := services.LoadQuestions("questions.json")
 	if err != nil {
 		log.Fatalf("Failed to load questions: %v", err)
 	}
 
-	// Initialize the GameServer with its dependencies.
+	// Initialize the game server.
 	gameServer := game.NewGameServer(sessionStore, questions)
 
+	// Register the HTTP request and websocket handlers.
 	handlers.RegisterHandlers(router, gameServer)
 
 	// Start the HTTP server.
