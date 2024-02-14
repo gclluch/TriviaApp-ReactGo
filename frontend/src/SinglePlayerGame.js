@@ -45,10 +45,10 @@ const SinglePlayerGame = () => {
   };
 
   const submitAnswer = (index) => async () => {
-    setLoading(true);
+    // setLoading(true);
     const currentQuestion = questions[currentQuestionIndex];
     try {
-      const response = await fetch(`${API_BASE}/answer`, {
+      const res = await fetch(`${API_BASE}/answer`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -59,16 +59,43 @@ const SinglePlayerGame = () => {
           answer: index,
         }),
       });
-      const data = await response.json();
+      const data = await res.json();
       if (data.correct) {
-        setScore((prevScore) => prevScore + 10);
+        setScore(data.currentScore);
       }
-      setCurrentQuestionIndex((currentIndex) => currentIndex < questions.length - 1 ? currentIndex + 1 : currentIndex);
-      setLoading(false);
-    } catch (error) {
+      if (currentQuestionIndex < questions.length - 1) {
+        setCurrentQuestionIndex(currentQuestionIndex + 1);
+      } else {
+        endGame();
+      }
+    } catch (err) {
       setError("Failed to submit answer.");
-      setLoading(false);
     }
+    // setLoading(false);
+  };
+
+  const endGame = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/game/end`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sessionId: gameSession, // need to provide the sessionId
+        }),
+      });
+      const data = await res.json();
+      alert(`Game over! Your score: ${data.finalScore}`); // Use the finalScore from the response
+      setGameSession(null);
+      setQuestions([]);
+      setCurrentQuestionIndex(0);
+      setScore(0);
+    } catch (err) {
+      setError("Failed to end game.");
+    }
+    setLoading(false);
   };
 
   if (loading) return <LoadingIndicator />;

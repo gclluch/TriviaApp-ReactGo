@@ -12,11 +12,8 @@ import (
 	"github.com/gclluch/captrivia_multiplayer/store"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
-
-var sessionStore *store.SessionStore // Global variable
 
 func main() {
 	// Initialize the store.
@@ -111,42 +108,11 @@ func websocketEndpoint(c *gin.Context) {
 			continue
 		}
 
-		// Handle the message based on its action type
-		switch msg.Action {
-		case "join":
-			handleJoinMessage(msg, conn)
-			// Add other case handlers as needed
-		}
+		// // Handle the message based on its action type
+		// switch msg.Action {
+		// case "join":
+		// 	handleJoinMessage(msg, conn)
+		// 	// Add other case handlers as needed
+		// }
 	}
-}
-
-func handleJoinMessage(msg models.WebSocketMessage, conn *websocket.Conn) {
-	session, exists := sessionStore.GetSession(msg.SessionID) // Replace sessionStore with sessionstore
-	if !exists {
-		log.Printf("Session not found: %s\n", msg.SessionID)
-		// Optionally, send an error message back to the client
-		return
-	}
-
-	playerID := msg.PlayerID
-	if playerID == "" {
-		playerID = uuid.New().String() // Generate a new ID if not provided
-	}
-
-	// Create a new Player instance with the WebSocket connection
-	player := &models.Player{
-		ID:    playerID,
-		Conn:  conn,
-		Score: 0, // Initialize score, adjust as necessary
-	}
-
-	// Add the player to the session
-	session.AddPlayer(player)
-
-	// Broadcast to all players in the session that a new player has joined
-	session.Broadcast(models.WebSocketMessage{
-		Action:    "update",
-		SessionID: msg.SessionID,
-		// Include other relevant information, such as the list of current players
-	})
 }
