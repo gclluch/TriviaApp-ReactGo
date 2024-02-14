@@ -1,7 +1,6 @@
 package models
 
 import (
-	"log"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -49,22 +48,22 @@ func (ps *PlayerSession) AddPlayer(player *Player) {
 }
 
 // Assuming a basic structure for incoming WebSocket messages
-type WebSocketMessage struct {
-	Action    string `json:"action"`
-	SessionID string `json:"sessionId"`
-	PlayerID  string `json:"playerId"` // Optional, depending on your implementation
-}
+// type WebSocketMessage struct {
+// 	Action    string `json:"action"`
+// 	SessionID string `json:"sessionId"`
+// 	PlayerID  string `json:"playerId"` // Optional, depending on your implementation
+// }
 
-func (ps *PlayerSession) Broadcast(message interface{}) {
-	ps.Lock()
-	defer ps.Unlock()
+// func (ps *PlayerSession) Broadcast(message interface{}) {
+// 	ps.Lock()
+// 	defer ps.Unlock()
 
-	for _, player := range ps.Players {
-		if player.Conn != nil {
-			if err := player.Conn.WriteJSON(message); err != nil {
-				log.Printf("Failed to send message to player %s: %v", player.ID, err)
-				// Consider handling disconnected clients
-			}
-		}
-	}
-}
+// 	for _, player := range ps.Players {
+// 		if player.Conn != nil {
+// 			if err := player.Conn.WriteJSON(message); err != nil {
+// 				log.Printf("Failed to send message to player %s: %v", player.ID, err)
+// 				// Consider handling disconnected clients
+// 			}
+// 		}
+// 	}
+// }

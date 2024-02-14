@@ -1,34 +1,18 @@
 package main
 
 import (
-	"encoding/json"
-	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 
+	"github.com/gclluch/captrivia_multiplayer/game"
 	"github.com/gclluch/captrivia_multiplayer/handlers"
-	"github.com/gclluch/captrivia_multiplayer/models"
 	"github.com/gclluch/captrivia_multiplayer/store"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
 )
 
 func main() {
-	// Initialize the store.
-	sessionStore := store.NewSessionStore()
-
-	// Load or initialize your questions here. This is a placeholder.
-	// You might load these from a JSON file, a database, or define them in code.
-	questions, err := loadQuestions()
-	if err != nil {
-		log.Fatalf("Failed to load questions: %v", err)
-	}
-
-	// Initialize the GameServer with its dependencies.
-	gameServer := handlers.NewGameServer(sessionStore, questions)
-
 	// Set up the Gin router and configure CORS, if needed.
 	router := gin.Default()
 
@@ -39,15 +23,17 @@ func main() {
 	// Apply CORS middleware to the router
 	router.Use(cors.New(config))
 
-	// Define routes and associate them with handler functions.
-	router.POST("/game/start", gameServer.StartGameHandler)
-	router.GET("/questions", gameServer.QuestionsHandler)
-	router.POST("/answer", gameServer.AnswerHandler)
-	router.POST("/game/end", gameServer.EndGameHandler)
-	router.GET("/join/:sessionId", gameServer.JoinGameHandler)
+	// Initialize the store.
+	sessionStore := store.NewSessionStore()
+	questions, err := game.LoadQuestions("questions.json")
+	if err != nil {
+		log.Fatalf("Failed to load questions: %v", err)
+	}
 
-	// Register the WebSocket endpoint.
-	router.GET("/ws", websocketEndpoint)
+	// Initialize the GameServer with its dependencies.
+	gameServer := game.NewGameServer(sessionStore, questions)
+
+	handlers.RegisterHandlers(router, gameServer)
 
 	// Start the HTTP server.
 	port := os.Getenv("PORT")
@@ -58,61 +44,5 @@ func main() {
 	log.Printf("Server starting on port %s\n", port)
 	if err := router.Run(":" + port); err != nil {
 		log.Fatalf("Failed to run server: %v", err)
-	}
-}
-
-// loadQuestions should load your quiz questions.
-func loadQuestions() ([]models.Question, error) {
-	fileBytes, err := ioutil.ReadFile("questions.json")
-	if err != nil {
-		log.Fatalf("Unable to read questions file: %v", err)
-		return nil, err
-	}
-
-	var questions []models.Question
-	if err := json.Unmarshal(fileBytes, &questions); err != nil {
-		log.Fatalf("Unable to unmarshal questions JSON: %v", err)
-		return nil, err
-	}
-
-	return questions, nil
-}
-
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true // Allow all CORS origins
-	},
-}
-
-func websocketEndpoint(c *gin.Context) {
-	w, r := c.Writer, c.Request
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println("Failed to upgrade to WebSocket:", err)
-		return
-	}
-	defer conn.Close()
-
-	// Handle incoming messages
-	for {
-		_, message, err := conn.ReadMessage()
-		if err != nil {
-			log.Println("Read error:", err)
-			break
-		}
-
-		// Deserialize the incoming WebSocket message
-		var msg models.WebSocketMessage
-		if err := json.Unmarshal(message, &msg); err != nil {
-			log.Println("Error unmarshalling message:", err)
-			continue
-		}
-
-		// // Handle the message based on its action type
-		// switch msg.Action {
-		// case "join":
-		// 	handleJoinMessage(msg, conn)
-		// 	// Add other case handlers as needed
-		// }
 	}
 }
