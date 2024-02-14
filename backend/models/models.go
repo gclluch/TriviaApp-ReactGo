@@ -22,21 +22,3 @@ type Player struct {
 	// Conn  *websocket.Conn // WebSocket connection for real-time updates
 	// Consider adding a WebSocket connection pointer here for direct messaging
 }
-
-// // PlayerSession holds the state of a player's session including their score.
-// type PlayerSession struct {
-// 	sync.Mutex
-// 	Score       int
-// 	Players     map[string]*Player // Keyed by player ID
-// 	Connections map[*websocket.Conn]bool
-// }
-
-// // In your PlayerSession struct file
-// func (ps *PlayerSession) AddPlayer(player *Player) {
-// 	ps.Lock() // Assuming your PlayerSession includes a sync.Mutex for concurrency control
-// 	defer ps.Unlock()
-// 	if ps.Players == nil {
-// 		ps.Players = make(map[string]*Player)
-// 	}
-// 	ps.Players[player.ID] = player
-// }
