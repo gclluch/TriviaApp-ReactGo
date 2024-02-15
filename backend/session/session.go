@@ -13,6 +13,8 @@ type PlayerSession struct {
 	Score       int
 	Players     map[string]*models.Player // Keyed by player ID
 	Connections map[*websocket.Conn]bool
+	// You might want to add more fields here, such as a list of questions. (multi.single)
+	// You might want to add more fields here, such as a game state.
 }
 
 // In your PlayerSession struct file
@@ -23,6 +25,9 @@ func (ps *PlayerSession) AddPlayer(player *models.Player) {
 		ps.Players = make(map[string]*models.Player)
 	}
 	ps.Players[player.ID] = player
+	// You might want to handle the case where the player already exists.
+	// You might want to handle the case where the player addition fails.
+	// You might want to handle the case where the player ID is not unique.
 }
 
 // func (ps *PlayerSession) AddPlayer(player *Player) {

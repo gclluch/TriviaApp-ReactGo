@@ -39,6 +39,7 @@ func (gs *GameServer) StartGameHandler(c *gin.Context) {
 }
 
 // QuestionsHandler returns a set of questions for the game.
+// pull this from playerssession
 func (gs *GameServer) QuestionsHandler(c *gin.Context) {
 	shuffledQuestions := services.ShuffleQuestions(gs.Questions)
 	// Limit the questions to a certain number if desired
@@ -85,6 +86,8 @@ func (gs *GameServer) EndGameHandler(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
 		return
 	}
+
+	// Clean up the session data
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":    "Game ended successfully.",
