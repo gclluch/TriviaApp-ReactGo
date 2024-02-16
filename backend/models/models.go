@@ -22,3 +22,8 @@ type Player struct {
 	// Conn  *websocket.Conn // WebSocket connection for real-time updates
 	// Consider adding a WebSocket connection pointer here for direct messaging
 }
+
+// SessionRequest represents the payload for a request pertaining to a session
+type SessionRequest struct {
+	SessionId string `json:"sessionId"`
+}

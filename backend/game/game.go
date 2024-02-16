@@ -2,6 +2,7 @@ package game
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -27,7 +28,7 @@ func NewGameServer(store *store.SessionStore, questions []models.Question) *Game
 
 // StartGameHandler handles requests to start a new game session.
 func (gs *GameServer) StartGameHandler(c *gin.Context) {
-	sessionID := gs.Store.CreateSession()
+	sessionID := gs.Store.CreateSession(gs.Questions)
 
 	// Generate a shareable link. This could be as simple as appending the session ID
 	// to a base URL. For real deployment, ensure your base URL matches your deployed frontend.
@@ -41,9 +42,23 @@ func (gs *GameServer) StartGameHandler(c *gin.Context) {
 // QuestionsHandler returns a set of questions for the game.
 // pull this from playerssession
 func (gs *GameServer) QuestionsHandler(c *gin.Context) {
-	shuffledQuestions := services.ShuffleQuestions(gs.Questions)
-	// Limit the questions to a certain number if desired
-	c.JSON(http.StatusOK, shuffledQuestions)
+
+	// TODO: Limit the questions to a certain number if desired
+
+	var sessionRequest models.SessionRequest
+	if err := c.ShouldBindJSON(&sessionRequest); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	// Fetch shuffled questions from PlayerSession
+	session, exists := gs.Store.GetSession(sessionRequest.SessionId)
+	fmt.Println(session)
+	if !exists {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
+		return
+	}
+	c.JSON(http.StatusOK, session.Questions)
 }
 
 // AnswerHandler handles answer submissions and updates the player's score.

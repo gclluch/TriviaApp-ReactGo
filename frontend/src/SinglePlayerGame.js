@@ -25,16 +25,27 @@ const SinglePlayerGame = () => {
       });
       const data = await response.json();
       setGameSession(data.sessionId);
-      await fetchQuestions();
+      await fetchQuestions(data.sessionId);
     } catch (error) {
       setError("Failed to start game.");
       setLoading(false);
     }
   };
 
-  const fetchQuestions = async () => {
+  const fetchQuestions = async (session) => {
     try {
-      const response = await fetch(`${API_BASE}/questions`);
+      console.log(gameSession)
+      const response = await fetch(`${API_BASE}/questions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sessionId: session, // need to provide the sessionId
+        }),
+      });
+
+
       const data = await response.json();
       setQuestions(data);
       setLoading(false); // Stop loading once questions are fetched

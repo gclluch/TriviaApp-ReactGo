@@ -13,6 +13,7 @@ type PlayerSession struct {
 	Score       int
 	Players     map[string]*models.Player // Keyed by player ID
 	Connections map[*websocket.Conn]bool
+	Questions   []models.Question // holds shuffled questions for session
 	// You might want to add more fields here, such as a list of questions. (multi.single)
 	// You might want to add more fields here, such as a game state.
 }

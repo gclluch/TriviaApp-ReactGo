@@ -7,7 +7,7 @@ import (
 
 func RegisterHandlers(router *gin.Engine, gameServer *game.GameServer) {
 	router.POST("/game/start", gameServer.StartGameHandler)
-	router.GET("/questions", gameServer.QuestionsHandler)
+	router.POST("/questions", gameServer.QuestionsHandler)
 	router.POST("/answer", gameServer.AnswerHandler)
 	router.POST("/game/end", gameServer.EndGameHandler)
 	router.GET("/ws", gameServer.WebSocketEndpoint)
