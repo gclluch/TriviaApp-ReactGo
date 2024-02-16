@@ -2,12 +2,12 @@ package game
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/gclluch/captrivia_multiplayer/models"
 	"github.com/gclluch/captrivia_multiplayer/services"
+	"github.com/gclluch/captrivia_multiplayer/session"
 	"github.com/gclluch/captrivia_multiplayer/store"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -40,24 +40,13 @@ func (gs *GameServer) StartGameHandler(c *gin.Context) {
 }
 
 // QuestionsHandler returns a set of questions for the game.
-// pull this from playerssession
 func (gs *GameServer) QuestionsHandler(c *gin.Context) {
-
 	// TODO: Limit the questions to a certain number if desired
-
-	var sessionRequest models.SessionRequest
-	if err := c.ShouldBindJSON(&sessionRequest); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+	session, ok := getSessionFromRequest(gs, c)
+	if !ok {
 		return
 	}
 
-	// Fetch shuffled questions from PlayerSession
-	session, exists := gs.Store.GetSession(sessionRequest.SessionId)
-	fmt.Println(session)
-	if !exists {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
-		return
-	}
 	c.JSON(http.StatusOK, session.Questions)
 }
 
@@ -95,10 +84,8 @@ func (gs *GameServer) AnswerHandler(c *gin.Context) {
 
 // EndGameHandler concludes the game and returns the final score.
 func (gs *GameServer) EndGameHandler(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-	session, exists := gs.Store.GetSession(sessionID)
-	if !exists {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
+	session, ok := getSessionFromRequest(gs, c)
+	if !ok {
 		return
 	}
 
@@ -108,6 +95,22 @@ func (gs *GameServer) EndGameHandler(c *gin.Context) {
 		"message":    "Game ended successfully.",
 		"finalScore": session.Score,
 	})
+}
+
+func getSessionFromRequest(gs *GameServer, c *gin.Context) (*session.PlayerSession, bool) {
+	var sessionRequest models.SessionRequest
+	if err := c.ShouldBindJSON(&sessionRequest); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return nil, false
+	}
+
+	session, exists := gs.Store.GetSession(sessionRequest.SessionId)
+	if !exists {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
+		return nil, false
+	}
+
+	return session, true
 }
 
 // WEBSOCKET
