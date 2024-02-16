@@ -113,10 +113,6 @@ div.error {
 /* Dark theme CSS */
 
 .toggle-theme-button {
-  position: absolute; /* Position it at a fixed spot on the screen */
-  top: 20px; /* 20px from the top */
-  right: 20px; /* 20px from the right */
-  padding: 10px 15px; /* Smaller padding */
   font-size: 16px; /* Smaller font size */
   background-color: rgba(255, 255, 255, 0.2); /* Semi-transparent white for light theme */
   color: var(--button-text-color); /* Use the text color variable for adaptability */
@@ -155,3 +151,66 @@ div.error {
 }
 
 /* Additional elements like modals, alerts, etc. could be styled here. */
+
+/* App.css */
+
+.app-header {
+  display: flex;
+  justify-content: flex-end; /* Align items to the right */
+  width: 100%;
+  padding: 10px 20px;
+  position: absolute; /* Position it at a fixed spot on the screen */
+  top: 15px; /* 20px from the top */
+  right: 20px; /* 20px from the right */
+  padding: 10px 15px; /* Smaller padding */
+}
+
+.main-menu-button, .header-button {
+  margin-left: 10px;
+  padding: 8px 16px;
+  background-color: var(--button-bg-color);
+  color: var(--button-text-color);
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease;
+}
+
+.main-menu-button:hover, .header-button:hover {
+  background-color: var(--button-hover-bg-color);
+}
+
+/* App.css */
+.welcome-heading {
+  font-size: 2.5rem; /* 40px if the base font size is 16px */
+  text-align: center;
+  margin: 20px 0;
+}
+
+main {
+  padding: 20px;
+  margin-top: 40px; /* Adjust this value as needed to increase space */
+  width: 100%;
+  box-sizing: border-box;
+  /* Additional styles for centering or other layout adjustments can go here */
+}
+
+.menu {
+  display: flex;
+  flex-direction: column; /* Stacks children vertically */
+  align-items: center; /* Centers buttons horizontally */
+  gap: 20px; /* Adds space between the buttons */
+}
+
+
+button.menu-button {
+  width: 160px; /* Example width */
+  height: 50px; /* Example height */
+  padding: 10px 25px; /* Adjust padding if needed */
+  font-size: 18px; /* Keep font size consistent */
+  /* Keep the rest of your button styles */
+}
