@@ -205,3 +205,12 @@ main {
   align-items: center; /* Centers buttons horizontally */
   gap: 20px; /* Adds space between the buttons */
 }
+
+
+button.menu-button {
+  width: 160px; /* Example width */
+  height: 50px; /* Example height */
+  padding: 10px 25px; /* Adjust padding if needed */
+  font-size: 18px; /* Keep font size consistent */
+  /* Keep the rest of your button styles */
+}
