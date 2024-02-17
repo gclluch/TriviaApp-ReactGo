@@ -2,6 +2,7 @@ package game
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -30,6 +31,8 @@ func NewGameServer(store *store.SessionStore, questions []models.Question) *Game
 func (gs *GameServer) StartGameHandler(c *gin.Context) {
 	sessionID := gs.Store.CreateSession(gs.Questions)
 
+	fmt.Println("Session ID: ", sessionID)
+
 	// Generate a shareable link. This could be as simple as appending the session ID
 	// to a base URL. For real deployment, ensure your base URL matches your deployed frontend.
 	baseURL := "http://localhost:3000/join/"
@@ -37,6 +40,21 @@ func (gs *GameServer) StartGameHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"sessionId": sessionID, "shareableLink": shareableLink, "message": "Game started successfully."})
 
+}
+
+func (gs *GameServer) JoinGameHandler(c *gin.Context) {
+	session, ok := getSessionFromRequest(gs, c)
+	if !ok {
+		return
+	}
+
+	playerInfo := session.AddPlayer()
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":    "Player joined successfully.",
+		"playerId":   playerInfo.ID,   // Return the new player ID
+		"playerName": playerInfo.Name, // Return the assigned player name
+	})
 }
 
 // QuestionsHandler returns a set of questions for the game.
@@ -132,38 +150,46 @@ func (gs *GameServer) WebSocketEndpoint(c *gin.Context) {
 	}
 	defer conn.Close()
 
+	log.Println("WebSocket connection established")
+
 	// Listen for incoming messages
 	for {
-		_, msg, err := conn.ReadMessage()
+		_, message, err := conn.ReadMessage()
 		if err != nil {
-			log.Printf("Error reading WebSocket message: %v", err)
+			log.Println("Error reading message:", err)
 			break
 		}
+		log.Printf("Received message: %s\n", message)
 
-		// Process the message
-		gs.handleWebSocketMessage(msg, conn)
+		// Correctly process the message here, within the loop
+		gs.handleWebSocketMessage(message, conn)
 	}
 }
 
 func (gs *GameServer) handleWebSocketMessage(msg []byte, conn *websocket.Conn) {
-	// Deserialize the message into a structured format
-	var message WebSocketMessage
-	err := json.Unmarshal(msg, &message)
-	if err != nil {
+	// Assuming you have a way to parse your messages
+	fmt.Println("Message received: ", string(msg))
+
+	var message map[string]interface{}
+	if err := json.Unmarshal(msg, &message); err != nil {
 		log.Printf("Error unmarshalling WebSocket message: %v", err)
 		return
 	}
 
-	// switch message.Action {
-	// case "join":
-	// 	gs.handleJoinGame(message, conn)
-	// 	// Handle other actions such as "startCountdown", "submitAnswer", etc.
-	// }
-}
-
-// Define WebSocketMessage struct in models.go
-type WebSocketMessage struct {
-	Action    string `json:"action"`
-	SessionID string `json:"sessionId"`
-	// Additional fields as needed
+	if action, ok := message["action"].(string); ok && action == "joinSession" {
+		sessionId, _ := message["sessionId"].(string)
+		// Retrieve the session using the sessionId
+		session, exists := gs.Store.GetSession(sessionId)
+		if !exists {
+			log.Printf("Session not found: %s", sessionId)
+			return
+		}
+		session.AddConnection(conn)
+		// Optionally, send back the current player count
+		playerCount := len(session.Players)
+		conn.WriteJSON(map[string]interface{}{
+			"type":  "playerCount",
+			"count": playerCount,
+		})
+	}
 }

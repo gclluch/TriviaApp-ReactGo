@@ -18,6 +18,7 @@ type AnswerSubmission struct {
 // Player represents a player in the game.
 type Player struct {
 	ID    string
+	Name  string
 	Score int
 	// Conn  *websocket.Conn // WebSocket connection for real-time updates
 	// Consider adding a WebSocket connection pointer here for direct messaging
