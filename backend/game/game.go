@@ -50,6 +50,9 @@ func (gs *GameServer) JoinGameHandler(c *gin.Context) {
 
 	playerInfo := session.AddPlayer()
 
+	// Broadcast the updated player count to all clients in the session
+	session.BroadcastPlayerCount() // Assuming this method broadcasts the player count
+
 	c.JSON(http.StatusOK, gin.H{
 		"message":    "Player joined successfully.",
 		"playerId":   playerInfo.ID,   // Return the new player ID
@@ -150,7 +153,7 @@ func (gs *GameServer) WebSocketEndpoint(c *gin.Context) {
 	}
 	defer conn.Close()
 
-	log.Println("WebSocket connection established")
+	// log.Println("WebSocket connection established")
 
 	// Listen for incoming messages
 	for {
@@ -184,7 +187,10 @@ func (gs *GameServer) handleWebSocketMessage(msg []byte, conn *websocket.Conn) {
 			log.Printf("Session not found: %s", sessionId)
 			return
 		}
+
 		session.AddConnection(conn)
+		fmt.Println("Player joined session: ", sessionId)
+
 		// Optionally, send back the current player count
 		playerCount := len(session.Players)
 		conn.WriteJSON(map[string]interface{}{
@@ -192,4 +198,13 @@ func (gs *GameServer) handleWebSocketMessage(msg []byte, conn *websocket.Conn) {
 			"count": playerCount,
 		})
 	}
+}
+
+func (gs *GameServer) BroadcastToSession(sessionId string, message interface{}) {
+	session, exists := gs.Store.GetSession(sessionId)
+	if !exists {
+		log.Printf("Session not found: %s", sessionId)
+		return
+	}
+	session.Broadcast(message)
 }

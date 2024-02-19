@@ -1,7 +1,9 @@
 package session
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
 	"sync"
 
 	"github.com/gclluch/captrivia_multiplayer/models"
@@ -18,6 +20,14 @@ type PlayerSession struct {
 	Questions   []models.Question // holds shuffled questions for session
 	// You might want to add more fields here, such as a list of questions. (multi.single)
 	// You might want to add more fields here, such as a game state.
+}
+
+// NewPlayerSession creates a new PlayerSession with initialized fields.
+func NewPlayerSession() *PlayerSession {
+	return &PlayerSession{
+		Players:     make(map[string]*models.Player),
+		Connections: make(map[*websocket.Conn]bool),
+	}
 }
 
 // In your PlayerSession struct file
@@ -42,74 +52,82 @@ func (ps *PlayerSession) AddPlayer() models.Player {
 // You might want to handle the case where the player addition fails.
 // You might want to handle the case where the player ID is not unique.
 
-// func (ps *PlayerSession) AddPlayer(player *Player) {
-// 	// Implementation remains similar, but also manage WebSocket connection
-// }
-
-// func (ps *PlayerSession) Broadcast(message interface{}) {
-// 	ps.Lock()
-// 	defer ps.Unlock()
-// 	for conn := range ps.Connections {
-// 		if err := conn.WriteJSON(message); err != nil {
-// 			// Handle errors, possibly removing the connection
-// 		}
-// 	}
-// }
-
-// // New method to handle incoming WebSocket messages for this session
-// func (ps *PlayerSession) HandleMessage(msg []byte, sender *websocket.Conn) {
-// 	// Process the message and potentially broadcast updates
-// }
-
 // WEBSOCKET INTEGRATION
 
+// AddConnection adds a new WebSocket connection to the session and starts listening for messages.
 func (ps *PlayerSession) AddConnection(conn *websocket.Conn) {
 	ps.Lock()
 	defer ps.Unlock()
 
 	if ps.Connections == nil {
-		ps.Connections = make(map[*websocket.Conn]bool)
+		ps.Connections = make(map[*websocket.Conn]bool) // Initialize if nil
 	}
 	ps.Connections[conn] = true
 
-	// Start a goroutine to listen for messages from this connection
-	go ps.listen(conn)
+	fmt.Println("Player connected to session")
+
+	go ps.listen(conn) // Start listening for messages from this connection
 }
 
+// listen continuously reads messages from the WebSocket connection and handles them.
 func (ps *PlayerSession) listen(conn *websocket.Conn) {
 	defer func() {
 		conn.Close()
-		ps.removeConnection(conn)
+		ps.removeConnection(conn) // Ensure connection is removed on disconnect
 	}()
 
 	for {
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
-			break // Connection closed or error occurred
+			log.Println("Error reading message:", err)
+			break
 		}
-
-		// Handle the message, e.g., broadcast to other players in the session
 		ps.handleMessage(msg, conn)
 	}
 }
 
+// handleMessage processes incoming WebSocket messages.
 func (ps *PlayerSession) handleMessage(msg []byte, sender *websocket.Conn) {
-	// Logic to handle a new message received from a client
-	// For example, broadcast it to all other connections in this session
+	// Example: Log received messages
+	fmt.Printf("Received message: %s\n", string(msg))
+
+	// Here, add logic to handle different message types, e.g., update game state or broadcast messages
 }
 
+// Broadcast sends a message to all connected WebSocket clients in the session.
 func (ps *PlayerSession) Broadcast(message interface{}) {
 	ps.Lock()
 	defer ps.Unlock()
 
-	// for conn := range ps.Connections {
-	// 	// Send message to each connection
-	// }
+	messageBytes, err := json.Marshal(message)
+	if err != nil {
+		log.Printf("Error marshalling message: %v", err)
+		return
+	}
+
+	for conn := range ps.Connections {
+		if err := conn.WriteMessage(websocket.TextMessage, messageBytes); err != nil {
+			log.Printf("Error broadcasting message: %v", err)
+			delete(ps.Connections, conn) // Remove faulty connection
+		}
+	}
 }
 
+// BroadcastPlayerCount sends the current player count to all clients in the session.
+func (ps *PlayerSession) BroadcastPlayerCount() {
+	playerCount := len(ps.Players) // Determine the current player count
+	message := map[string]interface{}{
+		"type":  "playerCount",
+		"count": playerCount,
+	}
+	ps.Broadcast(message) // Use the Broadcast method to send the message
+}
+
+// removeConnection safely removes a WebSocket connection from the session.
 func (ps *PlayerSession) removeConnection(conn *websocket.Conn) {
 	ps.Lock()
-	defer ps.Unlock()
-
 	delete(ps.Connections, conn)
+	ps.Unlock()
+
+	log.Println("Player disconnected from session")
 }

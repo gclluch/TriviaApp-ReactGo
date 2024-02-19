@@ -51,6 +51,7 @@ const JoinGameComponent = () => {
         if (data.type === 'playerCount') {
           console.log('Received player count:', data.count);
           setPlayerCount(data.count); // Update state with the new player count
+          console.log('Player Count:', data.count);
         }
         // Handle other message types as needed
       };
