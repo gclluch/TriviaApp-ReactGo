@@ -1,62 +1,32 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from 'react-router-dom';
-// import { useWebSocket } from './WebSocketContext'; // Ensure this hook is implemented correctly
-
-const API_BASE = process.env.REACT_APP_BACKEND_URL || "http://localhost:8080";
+import React, { useEffect, useState } from 'react';
+import { useParams, useLocation } from 'react-router-dom';
 
 const MultiplayerGame = () => {
-  const { sessionId } = useParams(); // Extract sessionId from the route
-  console.log(sessionId);
-  const navigate = useNavigate();
-  // const webSocket = useWebSocket(); // Use the WebSocket connection provided by the context
-  const [shareableLink, setShareableLink] = useState("");
+  const { sessionId } = useParams();
+  const [questions, setQuestions] = useState([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const location = useLocation();
+  const { playerName } = location.state; // Accessing player name passed in state
 
-  // setShareableLink(`${window.location.origin}/join/${sessionId}`);
+  console.log("Player name:", playerName);
 
   useEffect(() => {
-    if (!sessionId) {
-      startNewGame();
-    } else {
-      joinGame(sessionId);
-    }
+    // Fetch questions based on sessionId
+    // Update state with fetched questions
   }, [sessionId]);
 
-
-  const startNewGame = async () => {
-    try {
-      const response = await fetch(`${API_BASE}/game/start`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!response.ok) throw new Error('Network response was not ok.');
-      const data = await response.json();
-      setShareableLink(data.shareableLink); // Set the shareable link for display
-      navigate(`/join/${data.sessionId}`); // Navigate to the shareable link
-    } catch (error) {
-      console.error("Failed to start a new game:", error);
-    }
-  };
-
-  const joinGame = async (sessionId) => {
-    // Here, you might call an endpoint like `/game/join` to add the player to the session.
-    // This example doesn't directly call such an endpoint but it's where you would do so.
-    console.log(`Joining game session: ${sessionId}`);
-    // Optionally, set the shareable link based on the sessionId for consistency
-    setShareableLink(`${window.location.origin}/join/${sessionId}`);
+  const handleAnswer = (selectedOption) => {
+    // Submit answer
+    // Possibly move to next question or handle game end
   };
 
   return (
     <div>
-      <h2>Multiplayer Session</h2>
-      {shareableLink && (
-        <>
-          <p>Share this link to invite more players:</p>
-          <input type="text" value={shareableLink} readOnly onFocus={(e) => e.target.select()} />
-        </>
-      )}
-      <button onClick={() => navigate('/')}>Back to Main Menu</button>
+      <h1>Multiplayer Game</h1>
+      {/* <p>Session ID: {sessionId}</p> */}
+      <p>Question {currentQuestionIndex + 1} of {questions.length}</p>
+      {/* Display question and options */}
     </div>
   );
 };
-
 export default MultiplayerGame;

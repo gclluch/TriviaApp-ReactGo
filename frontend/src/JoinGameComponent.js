@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useWebSocket } from './WebSocketContext'; // Ensure this is correctly implemented
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL || "http://localhost:8080";
@@ -12,6 +12,8 @@ const JoinGameComponent = () => {
   const [playerCount, setPlayerCount] = useState(0); // State for tracking live player count
   const { webSocket, isConnected } = useWebSocket(); // Destructuring to get webSocket and isConnected
   const [countdown, setCountdown] = useState(null);
+  const navigate = useNavigate();
+
 
   const joinGame = async (sessionId) => {
     console.log(`Attempting to join game session: ${sessionId}`);
@@ -41,7 +43,7 @@ const JoinGameComponent = () => {
     if (webSocket && isConnected) {
       const handleMessage = (event) => {
         const data = JSON.parse(event.data);
-        console.log('Received message:', data);
+        // console.log('Received message:', data);
         switch (data.type) {
           case 'playerCount':
             setPlayerCount(data.count);
@@ -72,6 +74,14 @@ const JoinGameComponent = () => {
       };
     }
   }, [webSocket, isConnected, sessionId]);
+
+  useEffect(() => {
+    console.log("Player count:", playerCount);
+    if (countdown === 0 && hasJoined) {
+
+      navigate(`/game/${sessionId}`, { state: { playerName: playerName } }); // Passing player name in state
+    }
+  }, [countdown, navigate, hasJoined, playerName, sessionId]);
 
   return (
     <div>

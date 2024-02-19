@@ -3,10 +3,10 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import "./App.css";
 import MainMenu from './MainMenu';
 import SinglePlayerGame from './SinglePlayerGame';
-import MultiplayerGame from './MultiplayerGame';
 
 import StartGameComponent from './StartGameComponent'; // Adjust the path as necessary
 import JoinGameComponent from './JoinGameComponent'; // Adjust the path as necessary
+import MultiplayerGame from "./MultiplayerGame";
 
 
 function App() {
@@ -31,10 +31,10 @@ function App() {
           <Routes>
             <Route path="/" element={<MainMenu />} />
             <Route path="/singleplayer" element={<SinglePlayerGame />} />
-            {/* <Route path="/multiplayer" element={<MultiplayerGame />} /> */}
-            {/* <Route path="/join/:sessionId" element={<MultiplayerGame />} /> */}
             <Route path="/multiplayer" element={<StartGameComponent />} />
             <Route path="/join/:sessionId" element={<JoinGameComponent />} />
+            <Route path="/game/:sessionId" element={<MultiplayerGame />} />
+
           </Routes>
         </main>
       </div>

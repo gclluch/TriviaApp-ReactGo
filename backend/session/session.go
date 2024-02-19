@@ -138,7 +138,7 @@ func (ps *PlayerSession) removeConnection(conn *websocket.Conn) {
 // Example of a function to start and broadcast a countdown
 // StartCountdown starts a countdown and broadcasts the countdown updates to all clients.
 func (ps *PlayerSession) StartCountdown(duration int) {
-	for i := duration; i > 0; i-- {
+	for i := duration; i >= 0; i-- {
 		fmt.Printf("Countdown: %d\n", i)
 		// Broadcast the countdown message
 		ps.Broadcast(map[string]interface{}{
