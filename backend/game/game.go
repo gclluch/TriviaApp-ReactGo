@@ -50,6 +50,11 @@ func (gs *GameServer) JoinGameHandler(c *gin.Context) {
 
 	playerInfo := session.AddPlayer()
 
+	// Start the countdown when the first player joins
+	if len(session.Players) == 1 {
+		go session.StartCountdown(10) // Start a 10-second countdown
+	}
+
 	// Broadcast the updated player count to all clients in the session
 	session.BroadcastPlayerCount() // Assuming this method broadcasts the player count
 

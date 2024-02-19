@@ -1,55 +1,38 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
-// Create a WebSocket context
 const WebSocketContext = createContext(null);
 
-// Custom hook for components to access the WebSocket context
-export const useWebSocket = () => {
-  const context = useContext(WebSocketContext);
-  if (context === undefined) {
-    throw new Error('useWebSocket must be used within a WebSocketProvider');
-  }
-  return context;
-};
+export const useWebSocket = () => useContext(WebSocketContext);
 
-// Provider component that wraps your app and provides the WebSocket context
 export const WebSocketProvider = ({ children }) => {
-    const [webSocket, setWebSocket] = useState(null);
-    const [isConnected, setIsConnected] = useState(false); // State to track connection status
+  const [webSocket, setWebSocket] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
 
-    useEffect(() => {
-        // Initialize WebSocket connection
-        const ws = new WebSocket('ws://localhost:8080/ws');
+  useEffect(() => {
+    const ws = new WebSocket('ws://localhost:8080/ws');
 
-        // Set up WebSocket event listeners
-        ws.onopen = () => {
-            console.log('WebSocket Connected');
-            setIsConnected(true); // Update connection status
-        };
+    ws.onopen = () => {
+      console.log('WebSocket Connected');
+      setIsConnected(true);
+    };
 
-        ws.onmessage = (event) => {
-            console.log('Received message:', event.data);
-            // Here you can handle incoming messages
-        };
+    ws.onmessage = (event) => {
+      console.log('Received message:', event.data);
+    };
 
-        ws.onclose = () => {
-            console.log('WebSocket Disconnected');
-            setIsConnected(false); // Update connection status
-        };
+    ws.onclose = () => {
+      console.log('WebSocket Disconnected');
+      setIsConnected(false);
+    };
 
-        // Update the WebSocket state
-        setWebSocket(ws);
+    setWebSocket(ws);
 
-        // Clean up on component unmount
-        return () => {
-            ws.close();
-        };
-    }, []);
+    return () => ws.close();
+  }, []);
 
-    // Provide the WebSocket and its connection status to the context consumers
-    return (
-        <WebSocketContext.Provider value={{ webSocket, isConnected }}>
-            {children}
-        </WebSocketContext.Provider>
-    );
+  return (
+    <WebSocketContext.Provider value={{ webSocket, isConnected }}>
+      {children}
+    </WebSocketContext.Provider>
+  );
 };

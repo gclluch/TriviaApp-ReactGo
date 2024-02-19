@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/gclluch/captrivia_multiplayer/models"
 	"github.com/google/uuid"
@@ -130,4 +131,20 @@ func (ps *PlayerSession) removeConnection(conn *websocket.Conn) {
 	ps.Unlock()
 
 	log.Println("Player disconnected from session")
+}
+
+// Assuming you have access to the session and WebSocket connections
+
+// Example of a function to start and broadcast a countdown
+// StartCountdown starts a countdown and broadcasts the countdown updates to all clients.
+func (ps *PlayerSession) StartCountdown(duration int) {
+	for i := duration; i > 0; i-- {
+		fmt.Printf("Countdown: %d\n", i)
+		// Broadcast the countdown message
+		ps.Broadcast(map[string]interface{}{
+			"type": "countdown",
+			"time": i,
+		})
+		time.Sleep(1 * time.Second)
+	}
 }
