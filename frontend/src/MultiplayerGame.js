@@ -18,6 +18,8 @@ const MultiplayerGame = () => {
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0); // State to store the high score
   const { webSocket, isConnected } = useWebSocket(); // Destructuring to get webSocket and isConnected
+  const [hasFinished, setHasFinished] = useState(false);
+
 
 
   useEffect(() => {
@@ -73,32 +75,6 @@ const MultiplayerGame = () => {
   }
 
 
-  // const fetchQuestions = async (session) => {
-  //   try {
-  //     const response = await fetch(`${API_BASE}/questions`, {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify({
-  //         sessionId: session, // need to provide the sessionId
-  //       }),
-  //     });
-
-  //     const data = await response.json();
-  //     setQuestions(data);
-  //   } catch (error) {
-  //     // setError("Failed to fetch questions.");
-  //   }
-  // };
-
-
-  const handleAnswer = (selectedOption) => {
-    // Submit answer
-    // Possibly move to next question or handle game end
-  };
-
-  // const submitAnswer = (index) => async () => {};
 
   const submitAnswer = (index) => async () => {
     const currentQuestion = questions[currentQuestionIndex];
@@ -108,7 +84,7 @@ const MultiplayerGame = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sessionId,
-          playerId, // Include playerId in the answer submission
+          playerId,
           questionId: currentQuestion.id,
           answer: index,
         }),
@@ -117,15 +93,16 @@ const MultiplayerGame = () => {
 
       if (data.correct) {
         setScore(data.currentScore); // Update score if points were added
-      }
-      if (currentQuestionIndex < questions.length - 1) {
-        setCurrentQuestionIndex(currentQuestionIndex + 1);
-      } else {
-        // Handle end game scenario
-      }
-    } catch (error) {
-      console.error("Failed to submit answer:", error);
     }
+    if (currentQuestionIndex < questions.length - 1) {
+        setCurrentQuestionIndex(currentQuestionIndex + 1);
+    } else {
+        // Handle end game scenario for the player
+        setHasFinished(true);
+    }
+} catch (error) {
+    console.error("Failed to submit answer:", error);
+}
   };
 
 
