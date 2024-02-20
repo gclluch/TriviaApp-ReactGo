@@ -75,11 +75,22 @@ const JoinGameComponent = () => {
     }
   }, [webSocket, isConnected, sessionId]);
 
+  // useEffect(() => {
+  //   console.log("Player count:", playerCount);
+  //   if (countdown === 0 && hasJoined) {
+
+  //     navigate(`/game/${sessionId}`, { state: { playerName: playerName } }); // Passing player name in state
+  //   }
+  // }, [countdown, navigate, hasJoined, playerName, sessionId]);
+
   useEffect(() => {
     console.log("Player count:", playerCount);
-    if (countdown === 0 && hasJoined) {
-
-      navigate(`/game/${sessionId}`, { state: { playerName: playerName } }); // Passing player name in state
+    if (countdown === 0) {
+      if (hasJoined) {
+        navigate(`/game/${sessionId}`, { state: { playerName: playerName, gameStarted: true } }); // Passing player name and gameStarted in state
+      } else {
+        navigate(`/game/${sessionId}`, { state: { gameStarted: false } }); // Indicate game started without the player
+      }
     }
   }, [countdown, navigate, hasJoined, playerName, sessionId]);
 
@@ -95,10 +106,10 @@ const JoinGameComponent = () => {
       )}
       {/* Display live player count */}
       <div className="footer"> {/* Use the footer class for player count */}
-        <h4>Live Player Count: {playerCount}</h4>
+      {countdown !== null && <div>Game Starting in: {countdown}</div>}
+        <h4>Player Count: {playerCount}</h4>
       </div>
-      {countdown !== null && <div>Countdown: {countdown}</div>}
-          </div>
+    </div>
   );
 };
 
