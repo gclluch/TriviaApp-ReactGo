@@ -45,7 +45,6 @@ const SinglePlayerGame = () => {
         }),
       });
 
-
       const data = await response.json();
       setQuestions(data);
       setLoading(false); // Stop loading once questions are fetched

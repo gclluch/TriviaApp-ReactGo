@@ -33,13 +33,11 @@ func (gs *GameServer) StartGameHandler(c *gin.Context) {
 
 	fmt.Println("Session ID: ", sessionID)
 
-	// Generate a shareable link. This could be as simple as appending the session ID
-	// to a base URL. For real deployment, ensure your base URL matches your deployed frontend.
+	// TODO: Pull this from env var or config
 	baseURL := "http://localhost:3000/join/"
 	shareableLink := baseURL + sessionID
 
 	c.JSON(http.StatusOK, gin.H{"sessionId": sessionID, "shareableLink": shareableLink, "message": "Game started successfully."})
-
 }
 
 func (gs *GameServer) JoinGameHandler(c *gin.Context) {
@@ -97,15 +95,32 @@ func (gs *GameServer) AnswerHandler(c *gin.Context) {
 		return
 	}
 
-	if correct {
-		session.Score += 10                                              // Assume each correct answer gives 10 points
-		gs.Store.UpdateSessionScore(submission.SessionID, session.Score) // Implement this method in your SessionStore
-	}
+	if submission.PlayerID == "" { // Answer logic for SP
+		if correct {
+			session.Score += 10
+			session.UpdateScore(session.Score) // Assume each correct answer gives 10 points
+		}
 
-	c.JSON(http.StatusOK, gin.H{
-		"correct":      correct,
-		"currentScore": session.Score,
-	})
+		c.JSON(http.StatusOK, gin.H{
+			"correct":      correct,
+			"currentScore": session.Score,
+		})
+	} else { // Answer logic for MP
+		session.Lock() // Ensure thread-safety
+		defer session.Unlock()
+
+		wasNotAnswered := !session.AnsweredQuestions[submission.QuestionID]
+		if correct && wasNotAnswered {
+			session.AnsweredQuestions[submission.QuestionID] = true // Mark question as answered
+			session.UpdatePlayerScore(submission.PlayerID, 10)      // Update score
+			session.BroadcastHighScore()                            // Broadcast new high score to all players
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"addPoints":    correct || wasNotAnswered,
+			"currentScore": session.Players[submission.PlayerID].Score,
+		})
+	}
 }
 
 // EndGameHandler concludes the game and returns the final score.

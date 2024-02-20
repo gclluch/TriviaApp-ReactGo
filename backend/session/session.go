@@ -15,10 +15,12 @@ import (
 // PlayerSession holds the state of a player's session including their score.
 type PlayerSession struct {
 	sync.Mutex
-	Score       int
-	Players     map[string]*models.Player // Keyed by player ID
-	Connections map[*websocket.Conn]bool
-	Questions   []models.Question // holds shuffled questions for session
+	Score             int                       // Handles single player score or multiplayer high score
+	Players           map[string]*models.Player // Keyed by player ID
+	Connections       map[*websocket.Conn]bool
+	Questions         []models.Question // holds shuffled questions for session
+	AnsweredQuestions map[string]bool   // Track if a question ID has been answered correctly
+
 	// You might want to add more fields here, such as a list of questions. (multi.single)
 	// You might want to add more fields here, such as a game state.
 }
@@ -26,8 +28,28 @@ type PlayerSession struct {
 // NewPlayerSession creates a new PlayerSession with initialized fields.
 func NewPlayerSession() *PlayerSession {
 	return &PlayerSession{
-		Players:     make(map[string]*models.Player),
-		Connections: make(map[*websocket.Conn]bool),
+		Players:           make(map[string]*models.Player),
+		Connections:       make(map[*websocket.Conn]bool),
+		AnsweredQuestions: make(map[string]bool), // Initialize the map
+	}
+}
+
+// UpdateSessionScore updates the score for a given session.
+func (ps *PlayerSession) UpdateScore(newScore int) {
+	ps.Lock()
+	defer ps.Unlock()
+
+	ps.Score = newScore
+	// You might want to handle the case where the session doesn't exist.
+	// You might want to handle the case where the score update fails.
+	// You might want to handle the case where the score is negative.
+	// You might want to handle the case where the score is too high.
+}
+
+// UpdatePlayerScore updates the score for a specific player.
+func (ps *PlayerSession) UpdatePlayerScore(playerID string, scoreToAdd int) {
+	if player, exists := ps.Players[playerID]; exists {
+		player.Score += scoreToAdd
 	}
 }
 
@@ -146,5 +168,35 @@ func (ps *PlayerSession) StartCountdown(duration int) {
 			"time": i,
 		})
 		time.Sleep(1 * time.Second)
+	}
+}
+
+func (ps *PlayerSession) BroadcastHighScore() {
+	ps.Lock()
+	defer ps.Unlock()
+
+	highScore := 0
+	for _, player := range ps.Players {
+		if player.Score > highScore {
+			highScore = player.Score
+		}
+	}
+
+	// Broadcast high score
+	message := map[string]interface{}{
+		"type":  "highScore",
+		"score": highScore,
+	}
+	messageBytes, err := json.Marshal(message)
+	if err != nil {
+		log.Printf("Error marshalling high score message: %v", err)
+		return
+	}
+
+	for conn := range ps.Connections {
+		if err := conn.WriteMessage(websocket.TextMessage, messageBytes); err != nil {
+			log.Printf("Error broadcasting high score: %v", err)
+			delete(ps.Connections, conn) // Remove faulty connection
+		}
 	}
 }

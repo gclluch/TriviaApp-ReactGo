@@ -2,23 +2,28 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import QuestionDisplay from './QuestionDisplay';
 import ScoreDisplay from './ScoreDisplay';
+import { useWebSocket } from './WebSocketContext'; // Ensure this is correctly implemented
+
 const API_BASE = process.env.REACT_APP_BACKEND_URL || "http://localhost:8080";
 
 const MultiplayerGame = () => {
   const { sessionId } = useParams();
-  const [questions, setQuestions] = useState([]);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const location = useLocation();
   const navigate = useNavigate();
-
-  const [score, setScore] = useState(0);
-  const [highSCore, setHighScore] = useState(0);
-  const { playerName, gameStarted } = location.state || { gameStarted: true }; // Default to gameStarted if state is undefined
-
+  const location = useLocation();
+  const { playerName, playerId, gameStarted } = location.state || {};
   const [failedToJoin, setFailedToJoin] = useState(false);
 
+  const [questions, setQuestions] = useState([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [score, setScore] = useState(0);
+  const [highScore, setHighScore] = useState(0); // State to store the high score
+  const { webSocket, isConnected } = useWebSocket(); // Destructuring to get webSocket and isConnected
 
-  console.log("Player name:", playerName);
+
+
+  // console.log("Player name:", playerName);
+  // console.log("Player ID:", playerId);
+
 
   useEffect(() => {
     if (!gameStarted) {
@@ -37,9 +42,27 @@ const MultiplayerGame = () => {
     fetchQuestions(sessionId)
   }, [sessionId]);
 
+  useEffect(() => {
+    if (webSocket && isConnected) {
+      const handleMessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'highScore') {
+          setHighScore(data.score); // Update high score on receiving a highScore message
+        }
+      };
+
+      webSocket.addEventListener('message', handleMessage);
+
+      return () => {
+        webSocket.removeEventListener('message', handleMessage);
+      };
+    }
+  }, [webSocket, isConnected]);
+
   if (failedToJoin) {
     return <div><h3>Failed to Join Game in Time</h3></div>;
   }
+
 
   const fetchQuestions = async (session) => {
     try {
@@ -65,19 +88,51 @@ const MultiplayerGame = () => {
     // Possibly move to next question or handle game end
   };
 
-  const submitAnswer = (index) => async () => {};
+  // const submitAnswer = (index) => async () => {};
+
+  const submitAnswer = (index) => async () => {
+    // setLoading(true);
+    const currentQuestion = questions[currentQuestionIndex];
+    try {
+      const res = await fetch(`${API_BASE}/answer`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sessionId: sessionId,
+          playerId: playerId,
+          questionId: currentQuestion.id,
+          answer: index,
+        }),
+      });
+      const data = await res.json();
+      if (data.addPoints) {
+        setScore(data.currentScore);
+      }
+      if (currentQuestionIndex < questions.length - 1) {
+        setCurrentQuestionIndex(currentQuestionIndex + 1);
+      } else {
+        // endGame();
+      }
+    } catch (err) {
+      // setError("Failed to submit answer.");
+    }
+    // setLoading(false);
+  };
 
   return (
     <div>
       <h1>Multiplayer Game</h1>
-      {/* <p>Session ID: {sessionId}</p> */}
       <p>Question {currentQuestionIndex + 1} of {questions.length}</p>
-      <QuestionDisplay
-          question={questions[currentQuestionIndex]?.questionText}
-          options={questions[currentQuestionIndex]?.options}
+      {questions.length > 0 && (
+        <QuestionDisplay
+          question={questions[currentQuestionIndex].questionText}
+          options={questions[currentQuestionIndex].options}
           onAnswer={submitAnswer}
         />
-      {/* Display question and options */}
+      )}
+      <ScoreDisplay score={score} highScore={highScore} />
     </div>
   );
 };

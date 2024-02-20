@@ -59,17 +59,3 @@ func (s *SessionStore) GetSession(sessionID string) (*session.PlayerSession, boo
 	// You might want to handle the case where the session retrieval fails.
 	// You might want to handle the case where the session ID is invalid.
 }
-
-// UpdateSessionScore updates the score for a given session.
-func (s *SessionStore) UpdateSessionScore(sessionID string, newScore int) {
-	s.Lock()
-	defer s.Unlock()
-
-	if session, exists := s.Sessions[sessionID]; exists {
-		session.Score = newScore
-	}
-	// You might want to handle the case where the session doesn't exist.
-	// You might want to handle the case where the score update fails.
-	// You might want to handle the case where the score is negative.
-	// You might want to handle the case where the score is too high.
-}

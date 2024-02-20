@@ -9,6 +9,8 @@ const JoinGameComponent = () => {
   const [shareableLink, setShareableLink] = useState("");
   const [hasJoined, setHasJoined] = useState(false);
   const [playerName, setPlayerName] = useState("");
+  const [playerId, setPlayerId] = useState("");
+
   const [playerCount, setPlayerCount] = useState(0); // State for tracking live player count
   const { webSocket, isConnected } = useWebSocket(); // Destructuring to get webSocket and isConnected
   const [countdown, setCountdown] = useState(null);
@@ -30,6 +32,7 @@ const JoinGameComponent = () => {
       console.log("Successfully joined the game:", data);
       setHasJoined(true);
       setPlayerName(data.playerName); // Update player name upon joining
+      setPlayerId(data.playerId);
     } catch (error) {
       console.error("Failed to join the game:", error);
     }
@@ -75,19 +78,16 @@ const JoinGameComponent = () => {
     }
   }, [webSocket, isConnected, sessionId]);
 
-  // useEffect(() => {
-  //   console.log("Player count:", playerCount);
-  //   if (countdown === 0 && hasJoined) {
-
-  //     navigate(`/game/${sessionId}`, { state: { playerName: playerName } }); // Passing player name in state
-  //   }
-  // }, [countdown, navigate, hasJoined, playerName, sessionId]);
 
   useEffect(() => {
     console.log("Player count:", playerCount);
     if (countdown === 0) {
       if (hasJoined) {
-        navigate(`/game/${sessionId}`, { state: { playerName: playerName, gameStarted: true } }); // Passing player name and gameStarted in state
+        navigate(`/game/${sessionId}`, { state: {
+          playerName: playerName,
+          playerId: playerId,
+          gameStarted: true,
+        } }); // Passing player name and gameStarted in state
       } else {
         navigate(`/game/${sessionId}`, { state: { gameStarted: false } }); // Indicate game started without the player
       }

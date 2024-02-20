@@ -11,6 +11,7 @@ type Question struct {
 // AnswerSubmission represents the payload for a player's answer submission.
 type AnswerSubmission struct {
 	SessionID  string `json:"sessionId"`
+	PlayerID   string `json:"playerId"`
 	QuestionID string `json:"questionId"`
 	Answer     int    `json:"answer"`
 }
