@@ -34,11 +34,17 @@ func (s *SessionStore) CreateSession(questions []models.Question) string {
 	uniqueSessionID := generateSessionID() // Enhance
 
 	// Store shuffled questions in the session
-	shuffledQuestions := services.ShuffleQuestions(questions)
-	s.Sessions[uniqueSessionID] = &session.PlayerSession{
-		Score:     0,
-		Questions: shuffledQuestions,
-	}
+	// shuffledQuestions := services.ShuffleQuestions(questions)
+	// s.Sessions[uniqueSessionID] = &session.PlayerSession{
+	// 	Score:     0,
+	// 	Questions: shuffledQuestions,
+	// }
+
+	// Ensure all maps are initialized in the session
+	playerSession := session.NewPlayerSession()                    // Assuming this initializes all fields
+	playerSession.Questions = services.ShuffleQuestions(questions) // Assign shuffled questions
+
+	s.Sessions[uniqueSessionID] = playerSession
 
 	// Need to initialize the shuffled list of questions ans store here
 	// You might want to handle the case where the session already exists.

@@ -88,7 +88,7 @@ func (gs *GameServer) AnswerHandler(c *gin.Context) {
 		return
 	}
 
-	// fmt.Println("Answer submission: ", submission)
+	fmt.Println("Answer submission: ", submission)
 	// fmt.Println("Answer submission: ", session)
 
 	// Validate the answer and update the score
@@ -117,10 +117,19 @@ func (gs *GameServer) AnswerHandler(c *gin.Context) {
 		return
 	}
 
+	fmt.Println("Player: ", player)
+	fmt.Println(session.AnsweredQuestions)
 	if correct && !session.AnsweredQuestions[submission.QuestionID] {
+		fmt.Println("Correct answer!")
 		session.AnsweredQuestions[submission.QuestionID] = true
-		player.Score += 10           // Update individual player score
+		fmt.Println("Correct answer!")
+
+		player.Score += 10 // Update individual player score
+		fmt.Println("Correct answer!")
+
 		session.BroadcastHighScore() // Implement this method to broadcast high score
+		fmt.Println("Correct answer!")
+
 	}
 
 	c.JSON(http.StatusOK, gin.H{"correct": correct, "currentScore": player.Score})

@@ -20,11 +20,6 @@ const MultiplayerGame = () => {
   const { webSocket, isConnected } = useWebSocket(); // Destructuring to get webSocket and isConnected
 
 
-
-  // console.log("Player name:", playerName);
-  // console.log("Player ID:", playerId);
-
-
   useEffect(() => {
     if (!gameStarted) {
       // If the gameStarted flag is false, it means the player failed to join in time
@@ -37,9 +32,23 @@ const MultiplayerGame = () => {
   }, [gameStarted, navigate]);
 
   useEffect(() => {
-    // Fetch questions based on sessionId
-    // Update state with fetched questions
-    fetchQuestions(sessionId)
+    const fetchQuestions = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/questions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId }),
+        });
+        const data = await response.json();
+        setQuestions(data);
+      } catch (error) {
+        console.error("Failed to fetch questions:", error);
+      }
+    };
+
+    if (sessionId) {
+      fetchQuestions();
+    }
   }, [sessionId]);
 
   useEffect(() => {
@@ -64,24 +73,25 @@ const MultiplayerGame = () => {
   }
 
 
-  const fetchQuestions = async (session) => {
-    try {
-      const response = await fetch(`${API_BASE}/questions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          sessionId: session, // need to provide the sessionId
-        }),
-      });
+  // const fetchQuestions = async (session) => {
+  //   try {
+  //     const response = await fetch(`${API_BASE}/questions`, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         sessionId: session, // need to provide the sessionId
+  //       }),
+  //     });
 
-      const data = await response.json();
-      setQuestions(data);
-    } catch (error) {
-      // setError("Failed to fetch questions.");
-    }
-  };
+  //     const data = await response.json();
+  //     setQuestions(data);
+  //   } catch (error) {
+  //     // setError("Failed to fetch questions.");
+  //   }
+  // };
+
 
   const handleAnswer = (selectedOption) => {
     // Submit answer
@@ -91,35 +101,32 @@ const MultiplayerGame = () => {
   // const submitAnswer = (index) => async () => {};
 
   const submitAnswer = (index) => async () => {
-    // setLoading(true);
     const currentQuestion = questions[currentQuestionIndex];
     try {
       const res = await fetch(`${API_BASE}/answer`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          sessionId: sessionId,
-          playerId: playerId,
+          sessionId,
+          playerId, // Include playerId in the answer submission
           questionId: currentQuestion.id,
           answer: index,
         }),
       });
       const data = await res.json();
       if (data.addPoints) {
-        setScore(data.currentScore);
+        setScore(data.currentScore); // Update score if points were added
       }
       if (currentQuestionIndex < questions.length - 1) {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
       } else {
-        // endGame();
+        // Handle end game scenario
       }
-    } catch (err) {
-      // setError("Failed to submit answer.");
+    } catch (error) {
+      console.error("Failed to submit answer:", error);
     }
-    // setLoading(false);
   };
+
 
   return (
     <div>

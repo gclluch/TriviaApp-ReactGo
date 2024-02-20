@@ -172,8 +172,8 @@ func (ps *PlayerSession) StartCountdown(duration int) {
 }
 
 func (ps *PlayerSession) BroadcastHighScore() {
-	ps.Lock()
-	defer ps.Unlock()
+	// ps.Lock()
+	// defer ps.Unlock()
 
 	highScore := 0
 	for _, player := range ps.Players {
