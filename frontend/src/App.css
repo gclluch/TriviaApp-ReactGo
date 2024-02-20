@@ -214,3 +214,22 @@ button.menu-button {
   font-size: 18px; /* Keep font size consistent */
   /* Keep the rest of your button styles */
 }
+
+/* App.css - Add to the bottom of your CSS file */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* Space content between top and bottom */
+  height: 100vh; /* Full height of the viewport */
+}
+
+.footer {
+  margin-top: auto; /* Push to the bottom */
+  padding: 20px; /* Add some padding */
+  width: 100%; /* Full width */
+  box-sizing: border-box; /* Include padding in width calculation */
+  text-align: center; /* Center the text */
+}
+
+

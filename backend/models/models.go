@@ -11,14 +11,17 @@ type Question struct {
 // AnswerSubmission represents the payload for a player's answer submission.
 type AnswerSubmission struct {
 	SessionID  string `json:"sessionId"`
+	PlayerID   string `json:"playerId"`
 	QuestionID string `json:"questionId"`
 	Answer     int    `json:"answer"`
 }
 
 // Player represents a player in the game.
 type Player struct {
-	ID    string
-	Score int
+	ID       string
+	Name     string
+	Score    int
+	Finished bool
 	// Conn  *websocket.Conn // WebSocket connection for real-time updates
 	// Consider adding a WebSocket connection pointer here for direct messaging
 }

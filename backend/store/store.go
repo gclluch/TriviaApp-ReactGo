@@ -34,11 +34,17 @@ func (s *SessionStore) CreateSession(questions []models.Question) string {
 	uniqueSessionID := generateSessionID() // Enhance
 
 	// Store shuffled questions in the session
-	shuffledQuestions := services.ShuffleQuestions(questions)
-	s.Sessions[uniqueSessionID] = &session.PlayerSession{
-		Score:     0,
-		Questions: shuffledQuestions,
-	}
+	// shuffledQuestions := services.ShuffleQuestions(questions)
+	// s.Sessions[uniqueSessionID] = &session.PlayerSession{
+	// 	Score:     0,
+	// 	Questions: shuffledQuestions,
+	// }
+
+	// Ensure all maps are initialized in the session
+	playerSession := session.NewPlayerSession()                    // Assuming this initializes all fields
+	playerSession.Questions = services.ShuffleQuestions(questions) // Assign shuffled questions
+
+	s.Sessions[uniqueSessionID] = playerSession
 
 	// Need to initialize the shuffled list of questions ans store here
 	// You might want to handle the case where the session already exists.
@@ -58,18 +64,4 @@ func (s *SessionStore) GetSession(sessionID string) (*session.PlayerSession, boo
 	// You might want to handle the case where the session exists but is nil.
 	// You might want to handle the case where the session retrieval fails.
 	// You might want to handle the case where the session ID is invalid.
-}
-
-// UpdateSessionScore updates the score for a given session.
-func (s *SessionStore) UpdateSessionScore(sessionID string, newScore int) {
-	s.Lock()
-	defer s.Unlock()
-
-	if session, exists := s.Sessions[sessionID]; exists {
-		session.Score = newScore
-	}
-	// You might want to handle the case where the session doesn't exist.
-	// You might want to handle the case where the score update fails.
-	// You might want to handle the case where the score is negative.
-	// You might want to handle the case where the score is too high.
 }
