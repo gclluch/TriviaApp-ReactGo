@@ -120,18 +120,11 @@ func (gs *GameServer) AnswerHandler(c *gin.Context) {
 	fmt.Println("Player: ", player)
 	fmt.Println(session.AnsweredQuestions)
 	if correct && !session.AnsweredQuestions[submission.QuestionID] {
-		fmt.Println("Correct answer!")
 		session.AnsweredQuestions[submission.QuestionID] = true
-		fmt.Println("Correct answer!")
-
 		player.Score += 10 // Update individual player score
-		fmt.Println("Correct answer!")
-
-		session.BroadcastHighScore() // Implement this method to broadcast high score
-		fmt.Println("Correct answer!")
-
+		// session.BroadcastHighScore() // Implement this method to broadcast high score
 	}
-
+	session.BroadcastHighScore()
 	c.JSON(http.StatusOK, gin.H{"correct": correct, "currentScore": player.Score})
 }
 

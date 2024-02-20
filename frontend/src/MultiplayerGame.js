@@ -114,7 +114,8 @@ const MultiplayerGame = () => {
         }),
       });
       const data = await res.json();
-      if (data.addPoints) {
+
+      if (data.correct) {
         setScore(data.currentScore); // Update score if points were added
       }
       if (currentQuestionIndex < questions.length - 1) {

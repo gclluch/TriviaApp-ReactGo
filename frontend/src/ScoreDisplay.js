@@ -5,8 +5,8 @@ import PropTypes from 'prop-types';
 
 const ScoreDisplay = ({ score, highScore }) => (
     <div>
-        <p className="score">Score: {score}</p>
-        {highScore !== undefined && <p className="score">High Score: {highScore}</p>}
+        <p className="score">Your Score: {score}</p>
+        {highScore !== undefined && <p className="score">Top Score: {highScore}</p>}
     </div>
 );
 
