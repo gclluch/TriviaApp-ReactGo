@@ -7,6 +7,7 @@ import SinglePlayerGame from './SinglePlayerGame';
 import StartGameComponent from './StartGameComponent'; // Adjust the path as necessary
 import JoinGameComponent from './JoinGameComponent'; // Adjust the path as necessary
 import MultiplayerGame from "./MultiplayerGame";
+import FinalScores from "./FinalScores";
 
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
             <Route path="/multiplayer" element={<StartGameComponent />} />
             <Route path="/join/:sessionId" element={<JoinGameComponent />} />
             <Route path="/game/:sessionId" element={<MultiplayerGame />} />
+            <Route path="/final-scores/:sessionId" element={<FinalScores />} />
 
           </Routes>
         </main>

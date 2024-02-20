@@ -50,7 +50,7 @@ func (gs *GameServer) JoinGameHandler(c *gin.Context) {
 
 	// Start the countdown when the first player joins
 	if len(session.Players) == 1 {
-		go session.StartCountdown(10) // Start a 10-second countdown
+		go session.StartCountdown(5) // Start a 10-second countdown
 	}
 
 	// Broadcast the updated player count to all clients in the session
@@ -88,15 +88,15 @@ func (gs *GameServer) AnswerHandler(c *gin.Context) {
 		return
 	}
 
-	fmt.Println("Answer submission: ", submission)
-	// fmt.Println("Answer submission: ", session)
-
 	// Validate the answer and update the score
 	correct, questionExists := services.CheckAnswer(gs.Questions, submission.QuestionID, submission.Answer)
 	if !questionExists {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Question not found"})
 		return
 	}
+
+	session.Lock()
+	defer session.Unlock()
 
 	// Single Player logic
 	if submission.PlayerID == "" {
@@ -108,24 +108,55 @@ func (gs *GameServer) AnswerHandler(c *gin.Context) {
 	}
 
 	// Multiplayer logic
-	session.Lock()
-	defer session.Unlock()
-
 	player, ok := session.Players[submission.PlayerID]
 	if !ok {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Player not found"})
 		return
 	}
 
-	fmt.Println("Player: ", player)
-	fmt.Println(session.AnsweredQuestions)
 	if correct && !session.AnsweredQuestions[submission.QuestionID] {
 		session.AnsweredQuestions[submission.QuestionID] = true
 		player.Score += 10 // Update individual player score
-		// session.BroadcastHighScore() // Implement this method to broadcast high score
 	}
 	session.BroadcastHighScore()
 	c.JSON(http.StatusOK, gin.H{"correct": correct, "currentScore": player.Score})
+}
+
+// MarkPlayerFinishedHandler updates a player's finished status and checks if all players are done.
+func (gs *GameServer) MarkPlayerFinishedHandler(c *gin.Context) {
+	var requestBody struct {
+		SessionID string `json:"sessionId"`
+		PlayerID  string `json:"playerId"`
+	}
+	if err := c.ShouldBindJSON(&requestBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	session, exists := gs.Store.GetSession(requestBody.SessionID)
+	if !exists {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
+		return
+	}
+
+	session.Lock()
+	defer session.Unlock()
+
+	player, ok := session.Players[requestBody.PlayerID]
+	if !ok {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Player not found"})
+		return
+	}
+
+	fmt.Println("Player finished: ", player.Name)
+
+	player.Finished = true
+	if session.CheckAllPlayersFinished() {
+		fmt.Println("All players finished")
+		session.Broadcast(map[string]interface{}{"type": "sessionComplete"})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Player marked as finished"})
 }
 
 // EndGameHandler concludes the game and returns the final score.
@@ -157,6 +188,40 @@ func getSessionFromRequest(gs *GameServer, c *gin.Context) (*session.PlayerSessi
 	}
 
 	return session, true
+}
+
+// FinalScoresHandler handles the request for final scores of a session.
+func (gs *GameServer) FinalScoresHandler(c *gin.Context) {
+	sessionID := c.Param("sessionId")
+	session, exists := gs.Store.GetSession(sessionID)
+	if !exists {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
+		return
+	}
+
+	// Extract scores and determine winners
+	var winners []string
+	highScore := 0
+	scores := make([]map[string]interface{}, 0)
+
+	for _, player := range session.Players {
+		scores = append(scores, map[string]interface{}{
+			"playerName": player.Name,
+			"score":      player.Score,
+		})
+		if player.Score > highScore {
+			highScore = player.Score
+			winners = []string{player.Name} // Reset winners with the new high scorer
+		} else if player.Score == highScore {
+			winners = append(winners, player.Name) // Add player to winners in case of a tie
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"scores":    scores,
+		"winners":   winners,
+		"highScore": highScore,
+	})
 }
 
 // WEBSOCKET

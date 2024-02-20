@@ -119,8 +119,8 @@ func (ps *PlayerSession) handleMessage(msg []byte, sender *websocket.Conn) {
 
 // Broadcast sends a message to all connected WebSocket clients in the session.
 func (ps *PlayerSession) Broadcast(message interface{}) {
-	ps.Lock()
-	defer ps.Unlock()
+	// ps.Lock()
+	// defer ps.Unlock()
 
 	messageBytes, err := json.Marshal(message)
 	if err != nil {
@@ -153,6 +153,16 @@ func (ps *PlayerSession) removeConnection(conn *websocket.Conn) {
 	ps.Unlock()
 
 	log.Println("Player disconnected from session")
+}
+
+func (ps *PlayerSession) CheckAllPlayersFinished() bool {
+	for _, player := range ps.Players {
+		fmt.Println(player.Finished)
+		if !player.Finished {
+			return false
+		}
+	}
+	return true
 }
 
 // Assuming you have access to the session and WebSocket connections
