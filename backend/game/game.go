@@ -88,6 +88,9 @@ func (gs *GameServer) AnswerHandler(c *gin.Context) {
 		return
 	}
 
+	// fmt.Println("Answer submission: ", submission)
+	// fmt.Println("Answer submission: ", session)
+
 	// Validate the answer and update the score
 	correct, questionExists := services.CheckAnswer(gs.Questions, submission.QuestionID, submission.Answer)
 	if !questionExists {
@@ -95,32 +98,32 @@ func (gs *GameServer) AnswerHandler(c *gin.Context) {
 		return
 	}
 
-	if submission.PlayerID == "" { // Answer logic for SP
+	// Single Player logic
+	if submission.PlayerID == "" {
 		if correct {
-			session.Score += 10
-			session.UpdateScore(session.Score) // Assume each correct answer gives 10 points
+			session.Score += 10 // Assume each correct answer gives 10 points
 		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"correct":      correct,
-			"currentScore": session.Score,
-		})
-	} else { // Answer logic for MP
-		session.Lock() // Ensure thread-safety
-		defer session.Unlock()
-
-		wasNotAnswered := !session.AnsweredQuestions[submission.QuestionID]
-		if correct && wasNotAnswered {
-			session.AnsweredQuestions[submission.QuestionID] = true // Mark question as answered
-			session.UpdatePlayerScore(submission.PlayerID, 10)      // Update score
-			session.BroadcastHighScore()                            // Broadcast new high score to all players
-		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"addPoints":    correct || wasNotAnswered,
-			"currentScore": session.Players[submission.PlayerID].Score,
-		})
+		c.JSON(http.StatusOK, gin.H{"correct": correct, "currentScore": session.Score})
+		return
 	}
+
+	// Multiplayer logic
+	session.Lock()
+	defer session.Unlock()
+
+	player, ok := session.Players[submission.PlayerID]
+	if !ok {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Player not found"})
+		return
+	}
+
+	if correct && !session.AnsweredQuestions[submission.QuestionID] {
+		session.AnsweredQuestions[submission.QuestionID] = true
+		player.Score += 10           // Update individual player score
+		session.BroadcastHighScore() // Implement this method to broadcast high score
+	}
+
+	c.JSON(http.StatusOK, gin.H{"correct": correct, "currentScore": player.Score})
 }
 
 // EndGameHandler concludes the game and returns the final score.

@@ -30,7 +30,7 @@ func NewPlayerSession() *PlayerSession {
 	return &PlayerSession{
 		Players:           make(map[string]*models.Player),
 		Connections:       make(map[*websocket.Conn]bool),
-		AnsweredQuestions: make(map[string]bool), // Initialize the map
+		AnsweredQuestions: make(map[string]bool), // Ensure this map is initialized
 	}
 }
 
