@@ -25,7 +25,7 @@ const FinalScores = () => {
 
   return (
     <div>
-      <h1>Final Scores</h1>
+      <h3>Final Scores</h3>
       <p>High Score: {highScore}</p>
       <p>You: {playerName}</p>
       {scores.map((score, index) => (

@@ -27,30 +27,26 @@ func generateSessionID() string {
 }
 
 // CreateSession generates a new session with a unique ID and initializes the score.
-func (s *SessionStore) CreateSession(questions []models.Question) string {
+func (s *SessionStore) CreateSession(questions []models.Question, numQuestions int) string {
 	s.Lock()
 	defer s.Unlock()
-	// Your session ID generation logic here
-	uniqueSessionID := generateSessionID() // Enhance
 
-	// Store shuffled questions in the session
-	// shuffledQuestions := services.ShuffleQuestions(questions)
-	// s.Sessions[uniqueSessionID] = &session.PlayerSession{
-	// 	Score:     0,
-	// 	Questions: shuffledQuestions,
-	// }
+	uniqueSessionID := generateSessionID()
 
-	// Ensure all maps are initialized in the session
-	playerSession := session.NewPlayerSession()                    // Assuming this initializes all fields
-	playerSession.Questions = services.ShuffleQuestions(questions) // Assign shuffled questions
+	// Shuffle questions first to ensure randomness
+	shuffledQuestions := services.ShuffleQuestions(questions)
+
+	// Select the specified number of questions
+	if numQuestions > len(shuffledQuestions) {
+		numQuestions = len(shuffledQuestions)
+	}
+	selectedQuestions := shuffledQuestions[:numQuestions]
+
+	playerSession := session.NewPlayerSession()
+	playerSession.Questions = selectedQuestions
 
 	s.Sessions[uniqueSessionID] = playerSession
 
-	// Need to initialize the shuffled list of questions ans store here
-	// You might want to handle the case where the session already exists.
-	// You might want to handle the case where the session creation fails.
-	// You might want to handle the case where the session ID generation fails.
-	// You might want to handle the case where the session ID is not unique.
 	return uniqueSessionID
 }
 

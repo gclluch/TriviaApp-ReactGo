@@ -18,7 +18,7 @@ const MultiplayerGame = () => {
   const [highScore, setHighScore] = useState(0);
   const { webSocket, isConnected } = useWebSocket();
   const [hasFinished, setHasFinished] = useState(false);
-  const [sessionComplete, setSessionComplete] = useState(false);
+  // const [sessionComplete, setSessionComplete] = useState(false);
 
   useEffect(() => {
     if (!gameStarted) {
@@ -62,7 +62,7 @@ const MultiplayerGame = () => {
             setHighScore(data.score);
             break;
           case 'sessionComplete':
-            setSessionComplete(true);
+            // setSessionComplete(true);
             console.log("Session is complete")
             navigate(`/final-scores/${sessionId}`, { state: { playerName, playerId } });
             break;

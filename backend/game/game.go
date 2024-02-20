@@ -29,15 +29,34 @@ func NewGameServer(store *store.SessionStore, questions []models.Question) *Game
 
 // StartGameHandler handles requests to start a new game session.
 func (gs *GameServer) StartGameHandler(c *gin.Context) {
-	sessionID := gs.Store.CreateSession(gs.Questions)
+	var requestBody struct {
+		NumQuestions int `json:"numQuestions"`
+	}
 
-	fmt.Println("Session ID: ", sessionID)
+	if err := c.ShouldBindJSON(&requestBody); err != nil || requestBody.NumQuestions <= 0 {
+		requestBody.NumQuestions = 10
+	}
 
-	// TODO: Pull this from env var or config
+	numQuestions := min(requestBody.NumQuestions, len(gs.Questions))
+
+	sessionID := gs.Store.CreateSession(gs.Questions, numQuestions)
+
 	baseURL := "http://localhost:3000/join/"
 	shareableLink := baseURL + sessionID
 
-	c.JSON(http.StatusOK, gin.H{"sessionId": sessionID, "shareableLink": shareableLink, "message": "Game started successfully."})
+	c.JSON(http.StatusOK, gin.H{
+		"sessionId":     sessionID,
+		"shareableLink": shareableLink,
+		"message":       "Game started successfully.",
+	})
+}
+
+// Helper function to get the minimum of two integers
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 func (gs *GameServer) JoinGameHandler(c *gin.Context) {
