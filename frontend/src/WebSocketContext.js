@@ -25,6 +25,11 @@ export const WebSocketProvider = ({ children }) => {
       setIsConnected(false);
     };
 
+    ws.onerror = (error) => {
+      console.error('WebSocket Error:', error);
+    };
+
+
     setWebSocket(ws);
 
     return () => ws.close();

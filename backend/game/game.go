@@ -65,11 +65,17 @@ func (gs *GameServer) JoinGameHandler(c *gin.Context) {
 		return
 	}
 
+	fmt.Println("Player joined session: ", session)
+
 	playerInfo := session.AddPlayer()
+
+	fmt.Println("Player added: ", playerInfo)
+
+	fmt.Println("Player count: ", len(session.Players))
 
 	// Start the countdown when the first player joins
 	if len(session.Players) == 1 {
-		go session.StartCountdown(5) // Start a 10-second countdown
+		go session.StartCountdown(5) // Start a countdown
 	}
 
 	// Broadcast the updated player count to all clients in the session
@@ -300,15 +306,16 @@ func (gs *GameServer) handleWebSocketMessage(msg []byte, conn *websocket.Conn) {
 			return
 		}
 
+		// TODO: DEBUG
 		session.AddConnection(conn)
 		fmt.Println("Player joined session: ", sessionId)
 
 		// Optionally, send back the current player count
-		playerCount := len(session.Players)
-		conn.WriteJSON(map[string]interface{}{
-			"type":  "playerCount",
-			"count": playerCount,
-		})
+		// playerCount := len(session.Players)
+		// conn.WriteJSON(map[string]interface{}{
+		// 	"type":  "playerCount",
+		// 	"count": playerCount,
+		// })
 	}
 }
 

@@ -131,17 +131,24 @@ func (ps *PlayerSession) Broadcast(message interface{}) {
 		return
 	}
 
+	fmt.Println("Broadcasting message:", string(messageBytes))
+	fmt.Print(ps.Connections)
+
 	for conn := range ps.Connections {
+		fmt.Println("Broadcasting to connection")
+		fmt.Println(conn)
 		if err := conn.WriteMessage(websocket.TextMessage, messageBytes); err != nil {
 			log.Printf("Error broadcasting message: %v", err)
-			delete(ps.Connections, conn) // Remove faulty connection
+			// delete(ps.Connections, conn) // Remove faulty connection
 		}
 	}
 }
 
 // BroadcastPlayerCount sends the current player count to all clients in the session.
 func (ps *PlayerSession) BroadcastPlayerCount() {
+
 	playerCount := len(ps.Players) // Determine the current player count
+	fmt.Println("Broadcasting player count:", playerCount)
 	message := map[string]interface{}{
 		"type":  "playerCount",
 		"count": playerCount,
