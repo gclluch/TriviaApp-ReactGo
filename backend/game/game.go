@@ -41,7 +41,7 @@ func (gs *GameServer) StartGameHandler(c *gin.Context) {
 
 	sessionID := gs.Store.CreateSession(gs.Questions, numQuestions)
 
-	baseURL := "http://localhost:3000/join/"
+	baseURL := "http://localhost:3000/join/" // Read from environment
 	shareableLink := baseURL + sessionID
 
 	c.JSON(http.StatusOK, gin.H{
@@ -114,13 +114,13 @@ func (gs *GameServer) AnswerHandler(c *gin.Context) {
 		return
 	}
 
-	session.Lock()
-	defer session.Unlock()
+	// session.Lock()
+	// defer session.Unlock()
 
 	// Single Player logic
 	if submission.PlayerID == "" {
 		if correct {
-			session.Score += 10 // Assume each correct answer gives 10 points
+			session.UpdateScore(10)
 		}
 		c.JSON(http.StatusOK, gin.H{"correct": correct, "currentScore": session.Score})
 		return
@@ -134,10 +134,16 @@ func (gs *GameServer) AnswerHandler(c *gin.Context) {
 	}
 
 	if correct && !session.AnsweredQuestions[submission.QuestionID] {
-		session.AnsweredQuestions[submission.QuestionID] = true
-		player.Score += 10 // Update individual player score
+		session.UpdatePlayerScore(
+			submission.PlayerID,
+			submission.QuestionID,
+			10,
+		)
+		session.BroadcastHighScore()
+		// session.AnsweredQuestions[submission.QuestionID] = true
+		// player.Score += 10 // Update individual player score
 	}
-	session.BroadcastHighScore()
+
 	c.JSON(http.StatusOK, gin.H{"correct": correct, "currentScore": player.Score})
 }
 
@@ -157,9 +163,6 @@ func (gs *GameServer) MarkPlayerFinishedHandler(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
 		return
 	}
-
-	session.Lock()
-	defer session.Unlock()
 
 	player, ok := session.Players[requestBody.PlayerID]
 	if !ok {

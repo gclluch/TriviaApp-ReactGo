@@ -35,11 +35,11 @@ func NewPlayerSession() *PlayerSession {
 }
 
 // UpdateSessionScore updates the score for a given session.
-func (ps *PlayerSession) UpdateScore(newScore int) {
+func (ps *PlayerSession) UpdateScore(scoreToAdd int) {
 	ps.Lock()
 	defer ps.Unlock()
 
-	ps.Score = newScore
+	ps.Score += scoreToAdd
 	// You might want to handle the case where the session doesn't exist.
 	// You might want to handle the case where the score update fails.
 	// You might want to handle the case where the score is negative.
@@ -47,10 +47,13 @@ func (ps *PlayerSession) UpdateScore(newScore int) {
 }
 
 // UpdatePlayerScore updates the score for a specific player.
-func (ps *PlayerSession) UpdatePlayerScore(playerID string, scoreToAdd int) {
+func (ps *PlayerSession) UpdatePlayerScore(playerID string, questionID string, scoreToAdd int) {
+	ps.Lock()
+	defer ps.Unlock()
 	if player, exists := ps.Players[playerID]; exists {
 		player.Score += scoreToAdd
 	}
+	ps.AnsweredQuestions[questionID] = true
 }
 
 // In your PlayerSession struct file
@@ -119,8 +122,8 @@ func (ps *PlayerSession) handleMessage(msg []byte, sender *websocket.Conn) {
 
 // Broadcast sends a message to all connected WebSocket clients in the session.
 func (ps *PlayerSession) Broadcast(message interface{}) {
-	// ps.Lock()
-	// defer ps.Unlock()
+	ps.Lock()
+	defer ps.Unlock()
 
 	messageBytes, err := json.Marshal(message)
 	if err != nil {

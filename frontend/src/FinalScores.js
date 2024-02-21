@@ -1,6 +1,5 @@
-// FinalScores.js
 import React, { useEffect, useState } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, Link } from 'react-router-dom';
 const API_BASE = process.env.REACT_APP_BACKEND_URL || "http://localhost:8080";
 
 const FinalScores = () => {
@@ -35,6 +34,11 @@ const FinalScores = () => {
       {winners.map((winner, index) => (
         <p key={index}>{winner}</p>
       ))}
+      <div>
+        {/* <h3>Want to play again?</h3> */}
+        {/* Link to the path that starts a new game */}
+        <Link to="/multiplayer"><button className="menu-button">Play Again</button></Link>
+      </div>
     </div>
   );
 };
