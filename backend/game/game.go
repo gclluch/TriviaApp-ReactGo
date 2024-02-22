@@ -14,64 +14,85 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// GameServer encapsulates the game logic and data.
+// GameServer struct encapsulates dependencies for the game logic.
 type GameServer struct {
 	Store     *store.SessionStore
 	Questions []models.Question
+	Upgrader  websocket.Upgrader
 }
 
+// NewGameServer initializes a new GameServer instance.
 func NewGameServer(store *store.SessionStore, questions []models.Question) *GameServer {
 	return &GameServer{
 		Store:     store,
 		Questions: questions,
+		Upgrader: websocket.Upgrader{
+			CheckOrigin: func(r *http.Request) bool {
+				return true // Allow all origins for demo purposes; adjust as necessary.
+			},
+		},
 	}
 }
 
-// StartGameHandler handles requests to start a new game session.
+// StartGameHandler initiates a new game session.
 func (gs *GameServer) StartGameHandler(c *gin.Context) {
-	sessionID := gs.Store.CreateSession(gs.Questions)
+	var requestBody struct {
+		NumQuestions int `json:"numQuestions"`
+	}
 
-	fmt.Println("Session ID: ", sessionID)
+	if err := c.ShouldBindJSON(&requestBody); err != nil {
+		requestBody.NumQuestions = 10
+	}
 
-	// TODO: Pull this from env var or config
-	baseURL := "http://localhost:3000/join/"
-	shareableLink := baseURL + sessionID
-
-	c.JSON(http.StatusOK, gin.H{"sessionId": sessionID, "shareableLink": shareableLink, "message": "Game started successfully."})
-}
-
-func (gs *GameServer) JoinGameHandler(c *gin.Context) {
-	session, ok := getSessionFromRequest(gs, c)
-	if !ok {
+	numQuestions := services.Clamp(requestBody.NumQuestions, 1, len(gs.Questions))
+	sessionID, err := gs.Store.CreateSession(gs.Questions, numQuestions)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create session"})
 		return
 	}
 
-	playerInfo := session.AddPlayer()
+	// Generate a shareable link for the session.
+	shareableLink := fmt.Sprintf("%s/join/%s", c.Request.Host, sessionID)
+	c.JSON(http.StatusOK, gin.H{
+		"message":       "Game session created successfully.",
+		"sessionId":     sessionID,
+		"shareableLink": shareableLink,
+	})
+}
+
+// JoinGameHandler adds a player to an existing game session.
+func (gs *GameServer) JoinGameHandler(c *gin.Context) {
+	sessionID := c.Param("sessionId")
+	session, ok := gs.retrieveSession(c, sessionID)
+	if !ok {
+		return
+	}
+	player := session.AddPlayer()
+
+	// Broadcast the updated player count to all clients in the session
+	session.BroadcastPlayerCount()
 
 	// Start the countdown when the first player joins
 	if len(session.Players) == 1 {
-		go session.StartCountdown(5) // Start a 10-second countdown
+		go session.StartCountdown(5)
 	}
-
-	// Broadcast the updated player count to all clients in the session
-	session.BroadcastPlayerCount() // Assuming this method broadcasts the player count
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":    "Player joined successfully.",
-		"playerId":   playerInfo.ID,   // Return the new player ID
-		"playerName": playerInfo.Name, // Return the assigned player name
+		"playerId":   player.ID,
+		"playerName": player.Name,
 	})
 }
 
 // QuestionsHandler returns a set of questions for the game.
 func (gs *GameServer) QuestionsHandler(c *gin.Context) {
-	// TODO: Limit the questions to a certain number if desired
-	session, ok := getSessionFromRequest(gs, c)
+	sessionID := c.Param("sessionId")
+	session, ok := gs.retrieveSession(c, sessionID)
 	if !ok {
 		return
 	}
 
-	c.JSON(http.StatusOK, session.Questions)
+	c.JSON(http.StatusOK, gin.H{"questions": session.Questions})
 }
 
 // AnswerHandler handles answer submissions and updates the player's score.
@@ -82,9 +103,8 @@ func (gs *GameServer) AnswerHandler(c *gin.Context) {
 		return
 	}
 
-	session, exists := gs.Store.GetSession(submission.SessionID)
-	if !exists {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
+	session, ok := gs.retrieveSession(c, submission.SessionID)
+	if !ok {
 		return
 	}
 
@@ -95,13 +115,10 @@ func (gs *GameServer) AnswerHandler(c *gin.Context) {
 		return
 	}
 
-	session.Lock()
-	defer session.Unlock()
-
 	// Single Player logic
 	if submission.PlayerID == "" {
 		if correct {
-			session.Score += 10 // Assume each correct answer gives 10 points
+			session.UpdateScore(10)
 		}
 		c.JSON(http.StatusOK, gin.H{"correct": correct, "currentScore": session.Score})
 		return
@@ -114,11 +131,16 @@ func (gs *GameServer) AnswerHandler(c *gin.Context) {
 		return
 	}
 
+	// If question answered correctly for the first time, update the player's score.
 	if correct && !session.AnsweredQuestions[submission.QuestionID] {
-		session.AnsweredQuestions[submission.QuestionID] = true
-		player.Score += 10 // Update individual player score
+		session.UpdatePlayerScore(
+			submission.PlayerID,
+			submission.QuestionID,
+			10,
+		)
+		session.BroadcastHighScore()
 	}
-	session.BroadcastHighScore()
+
 	c.JSON(http.StatusOK, gin.H{"correct": correct, "currentScore": player.Score})
 }
 
@@ -133,26 +155,19 @@ func (gs *GameServer) MarkPlayerFinishedHandler(c *gin.Context) {
 		return
 	}
 
-	session, exists := gs.Store.GetSession(requestBody.SessionID)
-	if !exists {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
+	session, ok := gs.retrieveSession(c, requestBody.SessionID)
+	if !ok {
 		return
 	}
-
-	session.Lock()
-	defer session.Unlock()
 
 	player, ok := session.Players[requestBody.PlayerID]
 	if !ok {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Player not found"})
 		return
 	}
-
-	fmt.Println("Player finished: ", player.Name)
-
 	player.Finished = true
+
 	if session.CheckAllPlayersFinished() {
-		fmt.Println("All players finished")
 		session.Broadcast(map[string]interface{}{"type": "sessionComplete"})
 	}
 
@@ -161,7 +176,8 @@ func (gs *GameServer) MarkPlayerFinishedHandler(c *gin.Context) {
 
 // EndGameHandler concludes the game and returns the final score.
 func (gs *GameServer) EndGameHandler(c *gin.Context) {
-	session, ok := getSessionFromRequest(gs, c)
+	sessionID := c.Param("sessionId")
+	session, ok := gs.retrieveSession(c, sessionID)
 	if !ok {
 		return
 	}
@@ -174,28 +190,11 @@ func (gs *GameServer) EndGameHandler(c *gin.Context) {
 	})
 }
 
-func getSessionFromRequest(gs *GameServer, c *gin.Context) (*session.PlayerSession, bool) {
-	var sessionRequest models.SessionRequest
-	if err := c.ShouldBindJSON(&sessionRequest); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
-		return nil, false
-	}
-
-	session, exists := gs.Store.GetSession(sessionRequest.SessionId)
-	if !exists {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
-		return nil, false
-	}
-
-	return session, true
-}
-
 // FinalScoresHandler handles the request for final scores of a session.
 func (gs *GameServer) FinalScoresHandler(c *gin.Context) {
 	sessionID := c.Param("sessionId")
-	session, exists := gs.Store.GetSession(sessionID)
-	if !exists {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
+	session, ok := gs.retrieveSession(c, sessionID)
+	if !ok {
 		return
 	}
 
@@ -217,6 +216,7 @@ func (gs *GameServer) FinalScoresHandler(c *gin.Context) {
 		}
 	}
 
+	// fmt.Printf("Scores: %v, Winners: %v, High Score: %d\n", scores, winners, highScore)
 	c.JSON(http.StatusOK, gin.H{
 		"scores":    scores,
 		"winners":   winners,
@@ -224,77 +224,83 @@ func (gs *GameServer) FinalScoresHandler(c *gin.Context) {
 	})
 }
 
-// WEBSOCKET
-
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true // Allow all CORS origins
-	},
+// retrieveSession retrieves a session by its unique ID
+func (gs *GameServer) retrieveSession(c *gin.Context, sessionID string) (*session.PlayerSession, bool) {
+	session, exists := gs.Store.GetSession(sessionID)
+	if !exists {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
+		return nil, false
+	}
+	return session, true
 }
 
-func (gs *GameServer) WebSocketEndpoint(c *gin.Context) {
-	var w http.ResponseWriter = c.Writer
-	var r *http.Request = c.Request
+// Websocket Integration
 
-	conn, err := upgrader.Upgrade(w, r, nil)
+// WebSocketEndpoint upgrades an HTTP connection to a WebSocket connection and handles incoming WebSocket messages.
+func (gs *GameServer) WebSocketEndpoint(c *gin.Context) {
+	// Upgrade HTTP connection to WebSocket protocol.
+	conn, err := gs.Upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		log.Printf("Failed to upgrade to WebSocket: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upgrade to WebSocket"})
 		return
 	}
-	defer conn.Close()
-
-	// log.Println("WebSocket connection established")
-
-	// Listen for incoming messages
-	for {
-		_, message, err := conn.ReadMessage()
+	defer func() {
+		err := conn.Close()
 		if err != nil {
-			log.Println("Error reading message:", err)
+			log.Printf("Error closing WebSocket connection: %v", err)
+		}
+	}()
+
+	log.Println("WebSocket connection established")
+
+	// Listen for messages on the WebSocket connection.
+	for {
+		_, msg, err := conn.ReadMessage()
+		if err != nil {
+			log.Printf("Error reading WebSocket message: %v", err)
 			break
 		}
-		log.Printf("Received message: %s\n", message)
-
-		// Correctly process the message here, within the loop
-		gs.handleWebSocketMessage(message, conn)
+		gs.processWebSocketMessage(msg, conn)
 	}
 }
 
-func (gs *GameServer) handleWebSocketMessage(msg []byte, conn *websocket.Conn) {
-	// Assuming you have a way to parse your messages
-	fmt.Println("Message received: ", string(msg))
-
+// processWebSocketMessage unmarshals and processes a single WebSocket message.
+func (gs *GameServer) processWebSocketMessage(msg []byte, conn *websocket.Conn) {
 	var message map[string]interface{}
 	if err := json.Unmarshal(msg, &message); err != nil {
 		log.Printf("Error unmarshalling WebSocket message: %v", err)
 		return
 	}
 
-	if action, ok := message["action"].(string); ok && action == "joinSession" {
-		sessionId, _ := message["sessionId"].(string)
-		// Retrieve the session using the sessionId
-		session, exists := gs.Store.GetSession(sessionId)
-		if !exists {
-			log.Printf("Session not found: %s", sessionId)
-			return
+	if action, ok := message["action"].(string); ok {
+		switch action {
+		case "joinSession":
+			gs.handleJoinSession(message, conn)
+		default:
+			log.Printf("Unhandled action type: %s", action)
 		}
-
-		session.AddConnection(conn)
-		fmt.Println("Player joined session: ", sessionId)
-
-		// Optionally, send back the current player count
-		playerCount := len(session.Players)
-		conn.WriteJSON(map[string]interface{}{
-			"type":  "playerCount",
-			"count": playerCount,
-		})
+	} else {
+		log.Println("WebSocket message does not contain an action type")
 	}
 }
 
-func (gs *GameServer) BroadcastToSession(sessionId string, message interface{}) {
-	session, exists := gs.Store.GetSession(sessionId)
-	if !exists {
-		log.Printf("Session not found: %s", sessionId)
+// handleJoinSession processes a "joinSession" action from a WebSocket message.
+func (gs *GameServer) handleJoinSession(message map[string]interface{}, conn *websocket.Conn) {
+	sessionID, ok := message["sessionId"].(string)
+	if !ok {
+		log.Println("WebSocket joinSession message does not contain 'sessionId'")
 		return
 	}
-	session.Broadcast(message)
+
+	session, exists := gs.Store.GetSession(sessionID)
+	if !exists {
+		log.Printf("Session not found: %s", sessionID)
+		return
+	}
+
+	session.AddConnection(conn)
+	log.Printf("Player joined session: %s", sessionID)
+
+	session.BroadcastPlayerCount()
 }

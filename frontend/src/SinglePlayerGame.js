@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from 'react';
 import QuestionDisplay from './QuestionDisplay';
 import ScoreDisplay from './ScoreDisplay';
 import LoadingIndicator from './LoadingIndicator';
@@ -13,122 +13,92 @@ const SinglePlayerGame = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState('');
 
-  const startGame = async () => {
+  const startGame = useCallback(async () => {
     setLoading(true);
-    setError(null);
+    setError('');
     try {
-      const response = await fetch(`${API_BASE}/game/start`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      const data = await response.json();
-      setGameSession(data.sessionId);
-      await fetchQuestions(data.sessionId);
+      const startResponse = await fetch(`${API_BASE}/game/start`, { method: "POST" });
+      const startData = await startResponse.json();
+      setGameSession(startData.sessionId);
+
+      const questionsResponse = await fetch(`${API_BASE}/questions/${startData.sessionId}`);
+      const questionsData = await questionsResponse.json();
+      setQuestions(questionsData.questions);
     } catch (error) {
-      setError("Failed to start game.");
+      setError("Failed to start or fetch questions for the game.");
+    } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchQuestions = async (session) => {
-    try {
-      console.log(gameSession)
-      const response = await fetch(`${API_BASE}/questions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          sessionId: session, // need to provide the sessionId
-        }),
-      });
-
-      const data = await response.json();
-      setQuestions(data);
-      setLoading(false); // Stop loading once questions are fetched
-    } catch (error) {
-      setError("Failed to fetch questions.");
-      setLoading(false);
-    }
-  };
-
-  const submitAnswer = (index) => async () => {
-    // setLoading(true);
+  const submitAnswer = useCallback(async (index) => {
     const currentQuestion = questions[currentQuestionIndex];
     try {
-      const res = await fetch(`${API_BASE}/answer`, {
+      const answerResponse = await fetch(`${API_BASE}/answer`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sessionId: gameSession,
           questionId: currentQuestion.id,
           answer: index,
         }),
       });
-      const data = await res.json();
-      if (data.correct) {
-        setScore(data.currentScore);
+      const answerData = await answerResponse.json();
+      if (answerData.correct) {
+        setScore((prevScore) => prevScore + 10); // Assuming each correct answer adds one point
       }
       if (currentQuestionIndex < questions.length - 1) {
-        setCurrentQuestionIndex(currentQuestionIndex + 1);
+        setCurrentQuestionIndex((prevIndex) => prevIndex + 1);
       } else {
-        endGame();
+        await endGame();
       }
     } catch (err) {
       setError("Failed to submit answer.");
     }
-    // setLoading(false);
-  };
+  }, [gameSession, questions, currentQuestionIndex]);
 
-  const endGame = async () => {
-    setLoading(true);
+  const endGame = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/game/end`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          sessionId: gameSession, // need to provide the sessionId
-        }),
-      });
-      const data = await res.json();
-      alert(`Game over! Your score: ${data.finalScore}`); // Use the finalScore from the response
-      setGameSession(null);
-      setQuestions([]);
-      setCurrentQuestionIndex(0);
-      setScore(0);
+      await fetch(`${API_BASE}/game/end/${gameSession}`, { method: "POST" });
+      alert(`Game over! Your score: ${score}`);
+      resetGame();
     } catch (err) {
-      setError("Failed to end game.");
+      setError("Failed to end the game.");
     }
-    setLoading(false);
-  };
+  }, [gameSession, score]);
+
+  const resetGame = useCallback(() => {
+    setGameSession(null);
+    setQuestions([]);
+    setCurrentQuestionIndex(0);
+    setScore(0);
+  }, []);
 
   if (loading) return <LoadingIndicator />;
   if (error) return <ErrorMessage message={error} />;
 
   return (
-    <div>
+    <div className="single-player-game">
       <h1>Single Player</h1>
       {!gameSession ? (
         <StartGameButton onStart={startGame} />
-      ) : currentQuestionIndex < questions.length ? (
-        <QuestionDisplay
-          question={questions[currentQuestionIndex]?.questionText}
-          options={questions[currentQuestionIndex]?.options}
-          onAnswer={submitAnswer}
-        />
       ) : (
-        <div>
-          Game Over. Your score: {score}.
-          <button onClick={() => setGameSession(null)}>Restart</button>
-        </div>
+        <>
+          {currentQuestionIndex < questions.length ? (
+            <QuestionDisplay
+              question={questions[currentQuestionIndex]?.questionText}
+              options={questions[currentQuestionIndex]?.options}
+              onAnswer={submitAnswer}
+            />
+          ) : (
+            <p>Game Over. Your score: {score}.</p>
+          )}
+          <ScoreDisplay score={score} />
+          <button onClick={resetGame} className="restart-button">Restart</button>
+        </>
       )}
-      {gameSession && <ScoreDisplay score={score}/>}
     </div>
   );
 };

@@ -20,13 +20,11 @@ const JoinGameComponent = () => {
   const joinGame = async (sessionId) => {
     console.log(`Attempting to join game session: ${sessionId}`);
     try {
-      const response = await fetch(`${API_BASE}/game/join`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ sessionId: sessionId }),
-      });
+      const response = await fetch(
+        `${API_BASE}/game/join/${sessionId}`,
+        {method: "POST"}
+        );
+
       if (!response.ok) throw new Error('Network response was not ok.');
       const data = await response.json();
       console.log("Successfully joined the game:", data);
@@ -46,14 +44,12 @@ const JoinGameComponent = () => {
     if (webSocket && isConnected) {
       const handleMessage = (event) => {
         const data = JSON.parse(event.data);
-        // console.log('Received message:', data);
         switch (data.type) {
           case 'playerCount':
             setPlayerCount(data.count);
             break;
           case 'countdown':
             setCountdown(data.time);
-            console.log("Countdown:", data.time);
             break;
           default:
             console.log("Unhandled message type:", data.type);
@@ -80,7 +76,6 @@ const JoinGameComponent = () => {
 
 
   useEffect(() => {
-    console.log("Player count:", playerCount);
     if (countdown === 0) {
       if (hasJoined) {
         navigate(`/game/${sessionId}`, { state: {
@@ -92,7 +87,7 @@ const JoinGameComponent = () => {
         navigate(`/game/${sessionId}`, { state: { gameStarted: false } }); // Indicate game started without the player
       }
     }
-  }, [countdown, navigate, hasJoined, playerName, sessionId]);
+  }, [countdown, navigate, hasJoined, playerName, sessionId, playerId, playerCount]);
 
   return (
     <div>

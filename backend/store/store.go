@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/gclluch/captrivia_multiplayer/models"
@@ -9,59 +10,51 @@ import (
 	"github.com/google/uuid"
 )
 
-// SessionStore manages player sessions with thread-safe operations.
+// SessionStore manages player sessions and provides thread-safe operations to manipulate sessions.
 type SessionStore struct {
 	sync.Mutex
 	Sessions map[string]*session.PlayerSession
 }
 
-// NewSessionStore creates a new instance of SessionStore.
+// NewSessionStore initializes a new instance of SessionStore necessary defaults.
 func NewSessionStore() *SessionStore {
 	return &SessionStore{
 		Sessions: make(map[string]*session.PlayerSession),
 	}
 }
 
-func generateSessionID() string {
-	return uuid.New().String()
-}
+// CreateSession creates a new game session with a subset of questions and returns its unique ID.
+// It shuffles the questions and selects the specified number to include in the session.
+func (s *SessionStore) CreateSession(questions []models.Question, numQuestions int) (string, error) {
+	if numQuestions <= 0 {
+		return "", fmt.Errorf("numQuestions must be positive")
+	}
 
-// CreateSession generates a new session with a unique ID and initializes the score.
-func (s *SessionStore) CreateSession(questions []models.Question) string {
 	s.Lock()
 	defer s.Unlock()
-	// Your session ID generation logic here
-	uniqueSessionID := generateSessionID() // Enhance
 
-	// Store shuffled questions in the session
-	// shuffledQuestions := services.ShuffleQuestions(questions)
-	// s.Sessions[uniqueSessionID] = &session.PlayerSession{
-	// 	Score:     0,
-	// 	Questions: shuffledQuestions,
-	// }
+	// Generate a unique session ID.
+	sessionID := uuid.New().String()
 
-	// Ensure all maps are initialized in the session
-	playerSession := session.NewPlayerSession()                    // Assuming this initializes all fields
-	playerSession.Questions = services.ShuffleQuestions(questions) // Assign shuffled questions
+	// Shuffle questions first to ensure randomness between sessions.
+	shuffledQuestions := services.ShuffleQuestions(questions)
 
-	s.Sessions[uniqueSessionID] = playerSession
+	// Select the desired number of questions for the session
+	selectedQuestions := shuffledQuestions[:numQuestions]
 
-	// Need to initialize the shuffled list of questions ans store here
-	// You might want to handle the case where the session already exists.
-	// You might want to handle the case where the session creation fails.
-	// You might want to handle the case where the session ID generation fails.
-	// You might want to handle the case where the session ID is not unique.
-	return uniqueSessionID
+	playerSession := session.NewPlayerSession()
+	playerSession.Questions = selectedQuestions
+
+	s.Sessions[sessionID] = playerSession
+
+	return sessionID, nil
 }
 
-// GetSession retrieves a session by ID if it exists.
+// GetSession retrieves a session by its unique ID, returning the session and a boolean indicating if it was found.
 func (s *SessionStore) GetSession(sessionID string) (*session.PlayerSession, bool) {
 	s.Lock()
 	defer s.Unlock()
+
 	session, exists := s.Sessions[sessionID]
 	return session, exists
-	// You might want to handle the case where the session doesn't exist.
-	// You might want to handle the case where the session exists but is nil.
-	// You might want to handle the case where the session retrieval fails.
-	// You might want to handle the case where the session ID is invalid.
 }
