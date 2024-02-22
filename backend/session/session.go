@@ -91,33 +91,6 @@ func (ps *PlayerSession) AddConnection(conn *websocket.Conn) {
 	ps.Connections[conn] = true
 
 	fmt.Println("Player connected to session")
-
-	go ps.listen(conn) // Start listening for messages from this connection
-}
-
-// listen continuously reads messages from the WebSocket connection and handles them.
-func (ps *PlayerSession) listen(conn *websocket.Conn) {
-	defer func() {
-		conn.Close()
-		ps.removeConnection(conn) // Ensure connection is removed on disconnect
-	}()
-
-	for {
-		_, msg, err := conn.ReadMessage()
-		if err != nil {
-			log.Println("Error reading message:", err)
-			break
-		}
-		ps.handleMessage(msg, conn)
-	}
-}
-
-// handleMessage processes incoming WebSocket messages.
-func (ps *PlayerSession) handleMessage(msg []byte, sender *websocket.Conn) {
-	// Example: Log received messages
-	fmt.Printf("Received message: %s\n", string(msg))
-
-	// Here, add logic to handle different message types, e.g., update game state or broadcast messages
 }
 
 // Broadcast sends a message to all connected WebSocket clients in the session.
@@ -136,10 +109,10 @@ func (ps *PlayerSession) Broadcast(message interface{}) {
 
 	for conn := range ps.Connections {
 		fmt.Println("Broadcasting to connection")
-		fmt.Println(conn)
+		// fmt.Println(conn)
 		if err := conn.WriteMessage(websocket.TextMessage, messageBytes); err != nil {
 			log.Printf("Error broadcasting message: %v", err)
-			// delete(ps.Connections, conn) // Remove faulty connection
+			delete(ps.Connections, conn) // Remove faulty connection
 		}
 	}
 }
@@ -154,15 +127,6 @@ func (ps *PlayerSession) BroadcastPlayerCount() {
 		"count": playerCount,
 	}
 	ps.Broadcast(message) // Use the Broadcast method to send the message
-}
-
-// removeConnection safely removes a WebSocket connection from the session.
-func (ps *PlayerSession) removeConnection(conn *websocket.Conn) {
-	ps.Lock()
-	delete(ps.Connections, conn)
-	ps.Unlock()
-
-	log.Println("Player disconnected from session")
 }
 
 func (ps *PlayerSession) CheckAllPlayersFinished() bool {
