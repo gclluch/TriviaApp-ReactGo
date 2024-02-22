@@ -44,15 +44,12 @@ const JoinGameComponent = () => {
     if (webSocket && isConnected) {
       const handleMessage = (event) => {
         const data = JSON.parse(event.data);
-        console.log('Received message:', data);
         switch (data.type) {
           case 'playerCount':
-            console.log("Player count websocket:", data.count)
             setPlayerCount(data.count);
             break;
           case 'countdown':
             setCountdown(data.time);
-            console.log("Countdown:", data.time);
             break;
           default:
             console.log("Unhandled message type:", data.type);
@@ -85,7 +82,7 @@ const JoinGameComponent = () => {
           playerName: playerName,
           playerId: playerId,
           gameStarted: true,
-        } });
+        } }); // Passing player name and gameStarted in state
       } else {
         navigate(`/game/${sessionId}`, { state: { gameStarted: false } }); // Indicate game started without the player
       }
