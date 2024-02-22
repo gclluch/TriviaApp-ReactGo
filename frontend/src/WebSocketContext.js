@@ -12,7 +12,6 @@ export const WebSocketProvider = ({ children, url = 'ws://localhost:8080/ws' }) 
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    // Initialize WebSocket connection only once and clean up on unmount
     const ws = new WebSocket(url);
 
     const onOpen = () => {
@@ -22,7 +21,6 @@ export const WebSocketProvider = ({ children, url = 'ws://localhost:8080/ws' }) 
 
     const onMessage = (event) => {
       console.log('Received message:', event.data);
-      // Here, you can also handle incoming messages
     };
 
     const onClose = () => {
@@ -32,10 +30,9 @@ export const WebSocketProvider = ({ children, url = 'ws://localhost:8080/ws' }) 
 
     const onError = (error) => {
       console.error('WebSocket Error:', error);
-      setIsConnected(false); // Consider setting isConnected to false on error
+      setIsConnected(false);
     };
 
-    // Setup WebSocket event listeners
     ws.addEventListener('open', onOpen);
     ws.addEventListener('message', onMessage);
     ws.addEventListener('close', onClose);
