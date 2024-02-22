@@ -42,3 +42,22 @@ func CheckAnswer(questions []models.Question, questionID string, answerIndex int
 	}
 	return false, false // Question not found
 }
+
+// Helper function to get the minimum of two integers
+func Min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// Helper function to clamp value between min and max.
+func Clamp(value, min, max int) int {
+	if value < min {
+		return min
+	}
+	if value > max {
+		return max
+	}
+	return value
+}

@@ -39,11 +39,6 @@ func (s *SessionStore) CreateSession(questions []models.Question, numQuestions i
 	// Shuffle questions first to ensure randomness between sessions.
 	shuffledQuestions := services.ShuffleQuestions(questions)
 
-	// If numQuestions exceeds the total number of available questions, adjust it
-	if numQuestions > len(shuffledQuestions) {
-		numQuestions = len(shuffledQuestions)
-	}
-
 	// Select the desired number of questions for the session
 	selectedQuestions := shuffledQuestions[:numQuestions]
 

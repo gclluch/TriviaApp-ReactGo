@@ -40,7 +40,7 @@ const MultiplayerGame = () => {
           body: JSON.stringify({ sessionId }),
         });
         const data = await response.json();
-        setQuestions(data);
+        setQuestions(data.questions);
       } catch (error) {
         console.error("Failed to fetch questions:", error);
       }

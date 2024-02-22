@@ -46,7 +46,7 @@ const SinglePlayerGame = () => {
       });
 
       const data = await response.json();
-      setQuestions(data);
+      setQuestions(data.questions);
       setLoading(false); // Stop loading once questions are fetched
     } catch (error) {
       setError("Failed to fetch questions.");
