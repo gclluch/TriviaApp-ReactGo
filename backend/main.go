@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+	"math/rand"
+	"time"
 
 	"github.com/gclluch/captrivia_multiplayer/game"
 	"github.com/gclluch/captrivia_multiplayer/handlers"
@@ -13,6 +15,8 @@ import (
 )
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
+
 	// Load configurations
 	loadConfig()
 
