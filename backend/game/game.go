@@ -39,7 +39,11 @@ func (gs *GameServer) StartGameHandler(c *gin.Context) {
 
 	numQuestions := min(requestBody.NumQuestions, len(gs.Questions))
 
-	sessionID := gs.Store.CreateSession(gs.Questions, numQuestions)
+	sessionID, err := gs.Store.CreateSession(gs.Questions, numQuestions)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create session"})
+		return
+	}
 
 	baseURL := "http://localhost:3000/join/" // Read from environment
 	shareableLink := baseURL + sessionID
