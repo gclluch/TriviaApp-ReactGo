@@ -2,7 +2,6 @@ package game
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -36,15 +35,15 @@ func NewGameServer(store *store.SessionStore, questions []models.Question) *Game
 
 // StartGameHandler initiates a new game session.
 func (gs *GameServer) StartGameHandler(c *gin.Context) {
-	var reqBody struct {
+	var requestBody struct {
 		NumQuestions int `json:"numQuestions"`
 	}
 
-	if err := c.ShouldBindJSON(&reqBody); err != nil {
-		reqBody.NumQuestions = 10
+	if err := c.ShouldBindJSON(&requestBody); err != nil {
+		requestBody.NumQuestions = 10
 	}
 
-	numQuestions := services.Clamp(reqBody.NumQuestions, 1, len(gs.Questions))
+	numQuestions := services.Clamp(requestBody.NumQuestions, 1, len(gs.Questions))
 	sessionID, err := gs.Store.CreateSession(gs.Questions, numQuestions)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create session"})
@@ -105,6 +104,7 @@ func (gs *GameServer) AnswerHandler(c *gin.Context) {
 		return
 	}
 
+	// DRY this up by moving the session retrieval logic to a separate function
 	session, exists := gs.Store.GetSession(submission.SessionID)
 	if !exists {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
@@ -134,6 +134,7 @@ func (gs *GameServer) AnswerHandler(c *gin.Context) {
 		return
 	}
 
+	// If question answered correctly for the first time, update the player's score.
 	if correct && !session.AnsweredQuestions[submission.QuestionID] {
 		session.UpdatePlayerScore(
 			submission.PlayerID,
@@ -157,6 +158,7 @@ func (gs *GameServer) MarkPlayerFinishedHandler(c *gin.Context) {
 		return
 	}
 
+	// DRY
 	session, exists := gs.Store.GetSession(requestBody.SessionID)
 	if !exists {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
@@ -168,12 +170,14 @@ func (gs *GameServer) MarkPlayerFinishedHandler(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Player not found"})
 		return
 	}
-
-	fmt.Println("Player finished: ", player.Name)
-
 	player.Finished = true
+
+	// if !session.MarkPlayerFinished(requestBody.PlayerID) { // Implement this in PlayerSession
+	//     c.JSON(http.StatusNotFound, gin.H{"error": "Player not found"})
+	//     return
+	// }
+
 	if session.CheckAllPlayersFinished() {
-		fmt.Println("All players finished")
 		session.Broadcast(map[string]interface{}{"type": "sessionComplete"})
 	}
 
@@ -202,6 +206,7 @@ func getSessionFromRequest(gs *GameServer, c *gin.Context) (*session.PlayerSessi
 		return nil, false
 	}
 
+	// DRY
 	session, exists := gs.Store.GetSession(sessionRequest.SessionId)
 	if !exists {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
