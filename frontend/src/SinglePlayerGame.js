@@ -34,17 +34,7 @@ const SinglePlayerGame = () => {
 
   const fetchQuestions = async (session) => {
     try {
-      console.log(gameSession)
-      const response = await fetch(`${API_BASE}/questions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          sessionId: session, // need to provide the sessionId
-        }),
-      });
-
+      const response = await fetch(`${API_BASE}/questions/${session}`);
       const data = await response.json();
       setQuestions(data.questions);
       setLoading(false); // Stop loading once questions are fetched
@@ -87,15 +77,7 @@ const SinglePlayerGame = () => {
   const endGame = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/game/end`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          sessionId: gameSession, // need to provide the sessionId
-        }),
-      });
+      const res = await fetch(`${API_BASE}/game/end/${gameSession}`);
       const data = await res.json();
       alert(`Game over! Your score: ${data.finalScore}`); // Use the finalScore from the response
       setGameSession(null);

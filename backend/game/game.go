@@ -2,6 +2,7 @@ package game
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -51,7 +52,7 @@ func (gs *GameServer) StartGameHandler(c *gin.Context) {
 	}
 
 	// Generate a shareable link for the session.
-	shareableLink := c.Request.Host + "/join/" + sessionID
+	shareableLink := fmt.Sprintf("%s/join/%s", c.Request.Host, sessionID)
 	c.JSON(http.StatusOK, gin.H{
 		"message":       "Game session created successfully.",
 		"sessionId":     sessionID,
@@ -61,18 +62,15 @@ func (gs *GameServer) StartGameHandler(c *gin.Context) {
 
 // JoinGameHandler adds a player to an existing game session.
 func (gs *GameServer) JoinGameHandler(c *gin.Context) {
-	session, ok := getSessionFromRequest(gs, c)
+	sessionID := c.Param("sessionId")
+	session, ok := gs.retrieveSession(c, sessionID)
 	if !ok {
 		return
 	}
-
 	player := session.AddPlayer()
 
 	// Broadcast the updated player count to all clients in the session
 	session.BroadcastPlayerCount()
-
-	// fmt.Println("Player added: ", player)
-	// fmt.Println("Player count: ", len(session.Players))
 
 	// Start the countdown when the first player joins
 	if len(session.Players) == 1 {
@@ -81,14 +79,15 @@ func (gs *GameServer) JoinGameHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":    "Player joined successfully.",
-		"playerId":   player.ID,   // Return the new player ID
-		"playerName": player.Name, // Return the assigned player name
+		"playerId":   player.ID,
+		"playerName": player.Name,
 	})
 }
 
 // QuestionsHandler returns a set of questions for the game.
 func (gs *GameServer) QuestionsHandler(c *gin.Context) {
-	session, ok := getSessionFromRequest(gs, c)
+	sessionID := c.Param("sessionId")
+	session, ok := gs.retrieveSession(c, sessionID)
 	if !ok {
 		return
 	}
@@ -104,10 +103,8 @@ func (gs *GameServer) AnswerHandler(c *gin.Context) {
 		return
 	}
 
-	// DRY this up by moving the session retrieval logic to a separate function
-	session, exists := gs.Store.GetSession(submission.SessionID)
-	if !exists {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
+	session, ok := gs.retrieveSession(c, submission.SessionID)
+	if !ok {
 		return
 	}
 
@@ -158,10 +155,8 @@ func (gs *GameServer) MarkPlayerFinishedHandler(c *gin.Context) {
 		return
 	}
 
-	// DRY
-	session, exists := gs.Store.GetSession(requestBody.SessionID)
-	if !exists {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
+	session, ok := gs.retrieveSession(c, requestBody.SessionID)
+	if !ok {
 		return
 	}
 
@@ -172,11 +167,6 @@ func (gs *GameServer) MarkPlayerFinishedHandler(c *gin.Context) {
 	}
 	player.Finished = true
 
-	// if !session.MarkPlayerFinished(requestBody.PlayerID) { // Implement this in PlayerSession
-	//     c.JSON(http.StatusNotFound, gin.H{"error": "Player not found"})
-	//     return
-	// }
-
 	if session.CheckAllPlayersFinished() {
 		session.Broadcast(map[string]interface{}{"type": "sessionComplete"})
 	}
@@ -186,7 +176,8 @@ func (gs *GameServer) MarkPlayerFinishedHandler(c *gin.Context) {
 
 // EndGameHandler concludes the game and returns the final score.
 func (gs *GameServer) EndGameHandler(c *gin.Context) {
-	session, ok := getSessionFromRequest(gs, c)
+	sessionID := c.Param("sessionId")
+	session, ok := gs.retrieveSession(c, sessionID)
 	if !ok {
 		return
 	}
@@ -199,29 +190,11 @@ func (gs *GameServer) EndGameHandler(c *gin.Context) {
 	})
 }
 
-func getSessionFromRequest(gs *GameServer, c *gin.Context) (*session.PlayerSession, bool) {
-	var sessionRequest models.SessionRequest
-	if err := c.ShouldBindJSON(&sessionRequest); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
-		return nil, false
-	}
-
-	// DRY
-	session, exists := gs.Store.GetSession(sessionRequest.SessionId)
-	if !exists {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
-		return nil, false
-	}
-
-	return session, true
-}
-
 // FinalScoresHandler handles the request for final scores of a session.
 func (gs *GameServer) FinalScoresHandler(c *gin.Context) {
 	sessionID := c.Param("sessionId")
-	session, exists := gs.Store.GetSession(sessionID)
-	if !exists {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
+	session, ok := gs.retrieveSession(c, sessionID)
+	if !ok {
 		return
 	}
 
@@ -243,6 +216,7 @@ func (gs *GameServer) FinalScoresHandler(c *gin.Context) {
 		}
 	}
 
+	// fmt.Printf("Scores: %v, Winners: %v, High Score: %d\n", scores, winners, highScore)
 	c.JSON(http.StatusOK, gin.H{
 		"scores":    scores,
 		"winners":   winners,
@@ -327,6 +301,8 @@ func (gs *GameServer) joinSessionHandler(message map[string]interface{}, conn *w
 	session.BroadcastPlayerCount()
 }
 
+// Helpers
+
 func (gs *GameServer) BroadcastToSession(sessionId string, message interface{}) {
 	session, exists := gs.Store.GetSession(sessionId)
 	if !exists {
@@ -334,4 +310,14 @@ func (gs *GameServer) BroadcastToSession(sessionId string, message interface{}) 
 		return
 	}
 	session.Broadcast(message)
+}
+
+// retrieveSession retrieves a session by its unique ID
+func (gs *GameServer) retrieveSession(c *gin.Context, sessionID string) (*session.PlayerSession, bool) {
+	session, exists := gs.Store.GetSession(sessionID)
+	if !exists {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
+		return nil, false
+	}
+	return session, true
 }

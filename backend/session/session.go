@@ -63,8 +63,6 @@ func (ps *PlayerSession) AddPlayer() *models.Player {
 	return player
 }
 
-// WEBSOCKET INTEGRATION
-
 // AddConnection manages a new WebSocket connection.
 func (ps *PlayerSession) AddConnection(conn *websocket.Conn) {
 	ps.Lock()

@@ -20,13 +20,11 @@ const JoinGameComponent = () => {
   const joinGame = async (sessionId) => {
     console.log(`Attempting to join game session: ${sessionId}`);
     try {
-      const response = await fetch(`${API_BASE}/game/join`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ sessionId: sessionId }),
-      });
+      const response = await fetch(
+        `${API_BASE}/game/join/${sessionId}`,
+        {method: "POST"}
+        );
+
       if (!response.ok) throw new Error('Network response was not ok.');
       const data = await response.json();
       console.log("Successfully joined the game:", data);
@@ -81,14 +79,13 @@ const JoinGameComponent = () => {
 
 
   useEffect(() => {
-    console.log("Player count:", playerCount);
     if (countdown === 0) {
       if (hasJoined) {
         navigate(`/game/${sessionId}`, { state: {
           playerName: playerName,
           playerId: playerId,
           gameStarted: true,
-        } }); // Passing player name and gameStarted in state
+        } });
       } else {
         navigate(`/game/${sessionId}`, { state: { gameStarted: false } }); // Indicate game started without the player
       }

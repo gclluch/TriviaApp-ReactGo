@@ -10,14 +10,14 @@ func RegisterHandlers(router *gin.Engine, gameServer *game.GameServer) {
 	// Setup a group for game-related routes
 	gameRoutes := router.Group("/game")
 	{
-		gameRoutes.POST("/start", gameServer.StartGameHandler) // Start a new game session
-		gameRoutes.POST("/join", gameServer.JoinGameHandler)   // Join an existing game session
-		gameRoutes.POST("/end", gameServer.EndGameHandler)     // End a game session
+		gameRoutes.POST("/start", gameServer.StartGameHandler)          // Start a new game session
+		gameRoutes.POST("/join/:sessionId", gameServer.JoinGameHandler) // Join an existing game session
+		gameRoutes.GET("/end/:sessionId", gameServer.EndGameHandler)    // End a game session
 	}
 
 	// Questions and answers handling
-	router.POST("/questions", gameServer.QuestionsHandler) // Retrieve questions for the game
-	router.POST("/answer", gameServer.AnswerHandler)       // Submit an answer
+	router.GET("/questions/:sessionId", gameServer.QuestionsHandler) // Retrieve questions for the game
+	router.POST("/answer", gameServer.AnswerHandler)                 // Submit an answer
 
 	// Player status updates
 	router.POST("/player/finished", gameServer.MarkPlayerFinishedHandler) // Mark a player as finished
