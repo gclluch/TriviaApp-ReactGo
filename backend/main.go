@@ -2,49 +2,58 @@ package main
 
 import (
 	"log"
-	"os"
 
 	"github.com/gclluch/captrivia_multiplayer/game"
 	"github.com/gclluch/captrivia_multiplayer/handlers"
 	"github.com/gclluch/captrivia_multiplayer/services"
 	"github.com/gclluch/captrivia_multiplayer/store"
-
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 )
 
 func main() {
-	// Set up the Gin router and configure CORS, if needed.
+	// Load configurations
+	loadConfig()
+
+	// Initialize the Gin router with CORS configuration
+	router := setupRouter()
+
+	// Initialize the game server with preloaded questions
+	gameServer := initializeGameServer()
+
+	// Register HTTP and WebSocket handlers
+	handlers.RegisterHandlers(router, gameServer)
+
+	// Start the HTTP server
+	startServer(router)
+}
+
+func loadConfig() {
+	viper.SetDefault("PORT", "8080")
+	viper.SetDefault("QUESTIONS_FILE", "questions.json")
+	viper.AutomaticEnv() // Read from environment variables
+}
+
+func setupRouter() *gin.Engine {
 	router := gin.Default()
-
-	// Set up CORS middleware options
 	config := cors.DefaultConfig()
-	config.AllowAllOrigins = true // Or configure as needed for your application
-
-	// Apply CORS middleware to the router
+	config.AllowAllOrigins = true
 	router.Use(cors.New(config))
+	return router
+}
 
-	// Initialize the store.
-	sessionStore := store.NewSessionStore()
-
-	// Prepare questions for game server.
-	questions, err := services.LoadQuestions("questions.json")
+func initializeGameServer() *game.GameServer {
+	questions, err := services.LoadQuestions(viper.GetString("QUESTIONS_FILE"))
 	if err != nil {
 		log.Fatalf("Failed to load questions: %v", err)
 	}
+	sessionStore := store.NewSessionStore()
+	return game.NewGameServer(sessionStore, questions)
+}
 
-	// Initialize the game server.
-	gameServer := game.NewGameServer(sessionStore, questions)
-
-	// Register the HTTP request and websocket handlers.
-	handlers.RegisterHandlers(router, gameServer)
-
-	// Start the HTTP server.
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080" // Default port if not specified.
-	}
-
+func startServer(router *gin.Engine) {
+	port := viper.GetString("PORT")
 	log.Printf("Server starting on port %s\n", port)
 	if err := router.Run(":" + port); err != nil {
 		log.Fatalf("Failed to run server: %v", err)
