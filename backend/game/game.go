@@ -224,67 +224,72 @@ func (gs *GameServer) FinalScoresHandler(c *gin.Context) {
 	})
 }
 
+// retrieveSession retrieves a session by its unique ID
+func (gs *GameServer) retrieveSession(c *gin.Context, sessionID string) (*session.PlayerSession, bool) {
+	session, exists := gs.Store.GetSession(sessionID)
+	if !exists {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
+		return nil, false
+	}
+	return session, true
+}
+
 // Websocket Integration
 
-// WebSocketEndpoint upgrades the HTTP server connection to the WebSocket protocol.
+// WebSocketEndpoint upgrades an HTTP connection to a WebSocket connection and handles incoming WebSocket messages.
 func (gs *GameServer) WebSocketEndpoint(c *gin.Context) {
+	// Upgrade HTTP connection to WebSocket protocol.
 	conn, err := gs.Upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		log.Printf("Failed to upgrade to WebSocket: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upgrade WebSocket"})
-		return // Ensure to return to prevent further execution in case of error.
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upgrade to WebSocket"})
+		return
 	}
-	defer conn.Close()
+	defer func() {
+		err := conn.Close()
+		if err != nil {
+			log.Printf("Error closing WebSocket connection: %v", err)
+		}
+	}()
 
 	log.Println("WebSocket connection established")
 
-	// Infinite loop to listen for incoming messages.
+	// Listen for messages on the WebSocket connection.
 	for {
-		messageType, message, err := conn.ReadMessage()
+		_, msg, err := conn.ReadMessage()
 		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("Error reading message: %v", err)
-			}
+			log.Printf("Error reading WebSocket message: %v", err)
 			break
 		}
-
-		// Delegate the processing of the message based on its type.
-		if messageType == websocket.TextMessage {
-			gs.handleWebSocketMessage(message, conn)
-		} else {
-			log.Println("Unsupported message type received")
-		}
+		gs.processWebSocketMessage(msg, conn)
 	}
 }
 
-// handleWebSocketMessage processes a single WebSocket message.
-func (gs *GameServer) handleWebSocketMessage(msg []byte, conn *websocket.Conn) {
+// processWebSocketMessage unmarshals and processes a single WebSocket message.
+func (gs *GameServer) processWebSocketMessage(msg []byte, conn *websocket.Conn) {
 	var message map[string]interface{}
 	if err := json.Unmarshal(msg, &message); err != nil {
 		log.Printf("Error unmarshalling WebSocket message: %v", err)
-		return // Early return on error to prevent further processing.
-	}
-
-	action, ok := message["action"].(string)
-	if !ok {
-		log.Println("Message does not contain an action type")
 		return
 	}
 
-	switch action {
-	case "joinSession":
-		gs.joinSessionHandler(message, conn)
-		// Add more cases for different actions.
-	default:
-		log.Printf("Unhandled action type: %s", action)
+	if action, ok := message["action"].(string); ok {
+		switch action {
+		case "joinSession":
+			gs.handleJoinSession(message, conn)
+		default:
+			log.Printf("Unhandled action type: %s", action)
+		}
+	} else {
+		log.Println("WebSocket message does not contain an action type")
 	}
 }
 
-// joinSessionHandler handles the "joinSession" action for WebSocket messages.
-func (gs *GameServer) joinSessionHandler(message map[string]interface{}, conn *websocket.Conn) {
+// handleJoinSession processes a "joinSession" action from a WebSocket message.
+func (gs *GameServer) handleJoinSession(message map[string]interface{}, conn *websocket.Conn) {
 	sessionID, ok := message["sessionId"].(string)
 	if !ok {
-		log.Println("joinSession message does not contain sessionId")
+		log.Println("WebSocket joinSession message does not contain 'sessionId'")
 		return
 	}
 
@@ -297,27 +302,5 @@ func (gs *GameServer) joinSessionHandler(message map[string]interface{}, conn *w
 	session.AddConnection(conn)
 	log.Printf("Player joined session: %s", sessionID)
 
-	// Broadcast the updated player count to all clients in the session.
 	session.BroadcastPlayerCount()
-}
-
-// Helpers
-
-func (gs *GameServer) BroadcastToSession(sessionId string, message interface{}) {
-	session, exists := gs.Store.GetSession(sessionId)
-	if !exists {
-		log.Printf("Session not found: %s", sessionId)
-		return
-	}
-	session.Broadcast(message)
-}
-
-// retrieveSession retrieves a session by its unique ID
-func (gs *GameServer) retrieveSession(c *gin.Context, sessionID string) (*session.PlayerSession, bool) {
-	session, exists := gs.Store.GetSession(sessionID)
-	if !exists {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
-		return nil, false
-	}
-	return session, true
 }
