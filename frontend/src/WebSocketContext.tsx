@@ -1,5 +1,11 @@
 // WebSocketContext.tsx
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from 'react';
 
 // Define an interface for the context value
 interface WebSocketContextValue {
@@ -20,10 +26,14 @@ const WebSocketContext = createContext<WebSocketContextValue>({
 });
 
 // Custom hook to use the WebSocket context
-export const useWebSocket = (): WebSocketContextValue => useContext(WebSocketContext);
+export const useWebSocket = (): WebSocketContextValue =>
+  useContext(WebSocketContext);
 
 // WebSocketProvider component
-export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, url = 'ws://localhost:8080/ws' }) => {
+export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
+  children,
+  url = 'ws://localhost:8080/ws',
+}) => {
   const [webSocket, setWebSocket] = useState<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
 

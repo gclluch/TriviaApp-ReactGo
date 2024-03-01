@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import "./App.css";
+import './App.css';
 import MainMenu from './MainMenu';
 import SinglePlayerGame from './SinglePlayerGame';
 import StartGameComponent from './StartGameComponent';
 import JoinGameComponent from './JoinGameComponent';
-import MultiplayerGame from "./MultiplayerGame";
-import FinalScores from "./FinalScores";
-import Leaderboard from "./Leaderboard";
+import MultiplayerGame from './MultiplayerGame';
+import FinalScores from './FinalScores';
+import Leaderboard from './Leaderboard';
 
 const App: React.FC = () => {
   const [theme, setTheme] = useState<string>('dark');
@@ -17,16 +17,22 @@ const App: React.FC = () => {
   }, [theme]);
 
   const toggleTheme = (): void => {
-    setTheme(current => current === 'light' ? 'dark' : 'light');
+    setTheme(current => (current === 'light' ? 'dark' : 'light'));
   };
 
   return (
     <Router>
       <div className="App">
         <header className="app-header">
-          <button onClick={toggleTheme} className="header-button">Toggle Theme</button>
-          <Link to="/"><button className="main-menu-button">Main Menu</button></Link>
-          <Link to="/leaderboard"><button className="header-button">Leaderboard</button></Link>
+          <button onClick={toggleTheme} className="header-button">
+            Toggle Theme
+          </button>
+          <Link to="/">
+            <button className="main-menu-button">Main Menu</button>
+          </Link>
+          <Link to="/leaderboard">
+            <button className="header-button">Leaderboard</button>
+          </Link>
         </header>
         <main>
           <Routes>
@@ -42,6 +48,6 @@ const App: React.FC = () => {
       </div>
     </Router>
   );
-}
+};
 
 export default App;

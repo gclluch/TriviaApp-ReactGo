@@ -7,10 +7,13 @@ interface ScoreDisplayProps {
   highScore?: number; // highScore is optional
 }
 
-const ScoreDisplay: React.FC<ScoreDisplayProps> = ({ score, highScore = null }) => (
+const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
+  score,
+  highScore = null,
+}) => (
   <div className="score-display">
-      <p className="score">Your Score: {score}</p>
-      {highScore !== null && <p className="score">Top Score: {highScore}</p>}
+    <p className="score">Your Score: {score}</p>
+    {highScore !== null && <p className="score">Top Score: {highScore}</p>}
   </div>
 );
 

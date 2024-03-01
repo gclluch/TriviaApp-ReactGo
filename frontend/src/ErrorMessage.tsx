@@ -7,7 +7,9 @@ interface ErrorMessageProps {
 }
 
 const ErrorMessage: React.FC<ErrorMessageProps> = ({ message }) => (
-  <div aria-live="assertive" className="error">Error: {message}</div>
+  <div aria-live="assertive" className="error">
+    Error: {message}
+  </div>
 );
 
 export default ErrorMessage;

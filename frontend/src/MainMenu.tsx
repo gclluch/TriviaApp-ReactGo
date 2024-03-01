@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom';
 
 const MainMenu: React.FC = () => {
   const menuItems = [
-    { path: "/singleplayer", label: "Single Player" },
-    { path: "/multiplayer", label: "Multiplayer" },
+    { path: '/singleplayer', label: 'Single Player' },
+    { path: '/multiplayer', label: 'Multiplayer' },
   ];
 
   return (
