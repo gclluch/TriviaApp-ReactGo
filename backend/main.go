@@ -41,6 +41,9 @@ func loadConfig() {
 
 func setupRouter() *gin.Engine {
 	router := gin.Default()
+	router.Use(gin.Logger())
+	router.Use(gin.Recovery())
+
 	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true
 	router.Use(cors.New(config))

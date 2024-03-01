@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sort"
+	"sync"
 
 	"github.com/gclluch/captrivia_multiplayer/models"
 	"github.com/gclluch/captrivia_multiplayer/services"
@@ -16,9 +18,11 @@ import (
 
 // GameServer struct encapsulates dependencies for the game logic.
 type GameServer struct {
-	Store     *store.SessionStore
-	Questions []models.Question
-	Upgrader  websocket.Upgrader
+	Store       *store.SessionStore
+	Questions   []models.Question
+	Upgrader    websocket.Upgrader
+	Leaderboard []models.LeaderboardEntry
+	mutex       sync.Mutex
 }
 
 // NewGameServer initializes a new GameServer instance.
@@ -132,7 +136,8 @@ func (gs *GameServer) AnswerHandler(c *gin.Context) {
 	}
 
 	// If question answered correctly for the first time, update the player's score.
-	if correct && !session.AnsweredQuestions[submission.QuestionID] {
+	addScore := correct && !session.AnsweredQuestions[submission.QuestionID]
+	if addScore {
 		session.UpdatePlayerScore(
 			submission.PlayerID,
 			submission.QuestionID,
@@ -141,7 +146,7 @@ func (gs *GameServer) AnswerHandler(c *gin.Context) {
 		session.BroadcastHighScore()
 	}
 
-	c.JSON(http.StatusOK, gin.H{"correct": correct, "currentScore": player.Score})
+	c.JSON(http.StatusOK, gin.H{"correct": addScore, "currentScore": player.Score})
 }
 
 // MarkPlayerFinishedHandler updates a player's finished status and checks if all players are done.
@@ -167,11 +172,68 @@ func (gs *GameServer) MarkPlayerFinishedHandler(c *gin.Context) {
 	}
 	player.Finished = true
 
+	gs.updateLeaderboard(player.ID, player.Score/10, len(session.Questions))
+
+	fmt.Println(gs.Leaderboard)
+
 	if session.CheckAllPlayersFinished() {
 		session.Broadcast(map[string]interface{}{"type": "sessionComplete"})
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Player marked as finished"})
+}
+
+func (gs *GameServer) updateLeaderboard(playerID string, rightAnswers, totalQuestions int) {
+	gs.mutex.Lock()
+	defer gs.mutex.Unlock()
+
+	// Check if the player already exists in the leaderboard and update their entry
+	// If not, append a new entry
+	found := false
+	for i, entry := range gs.Leaderboard {
+		if entry.PlayerID == playerID {
+			gs.Leaderboard[i].RightAnswers += rightAnswers
+			gs.Leaderboard[i].TotalQuestions += totalQuestions
+			found = true
+			break
+		}
+	}
+	if !found {
+		gs.Leaderboard = append(gs.Leaderboard, models.LeaderboardEntry{
+			PlayerID:       playerID,
+			RightAnswers:   rightAnswers,
+			TotalQuestions: totalQuestions,
+		})
+	}
+}
+
+// Handler to get leaderboard
+func (gs *GameServer) GetLeaderboardHandler(c *gin.Context) {
+	gs.mutex.Lock()
+	defer gs.mutex.Unlock()
+
+	// Sort the leaderboard slice based on the score (percentage) in descending order
+	sortedLeaderboard := make([]models.LeaderboardEntry, len(gs.Leaderboard))
+	copy(sortedLeaderboard, gs.Leaderboard)
+	sort.Slice(sortedLeaderboard, func(i, j int) bool {
+		scoreI := float64(sortedLeaderboard[i].RightAnswers) / float64(sortedLeaderboard[i].TotalQuestions)
+		scoreJ := float64(sortedLeaderboard[j].RightAnswers) / float64(sortedLeaderboard[j].TotalQuestions)
+		return scoreI > scoreJ // Descending order
+	})
+
+	leaderboardMap := make(map[string]string) // Create a map to hold the modified leaderboard entries
+	for _, entry := range sortedLeaderboard {
+		// Check to prevent division by zero
+		if entry.TotalQuestions > 0 {
+			percentage := (float64(entry.RightAnswers) / float64(entry.TotalQuestions)) * 100
+			formattedPercentage := fmt.Sprintf("%.2f%%", percentage)
+			leaderboardMap[entry.PlayerID] = formattedPercentage
+		} else {
+			leaderboardMap[entry.PlayerID] = "N/A" // Handle case where TotalQuestions is 0
+		}
+	}
+
+	c.JSON(http.StatusOK, leaderboardMap) // Send the sorted and formatted leaderboard as a JSON response
 }
 
 // EndGameHandler concludes the game and returns the final score.

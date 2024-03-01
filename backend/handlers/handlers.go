@@ -25,6 +25,8 @@ func RegisterHandlers(router *gin.Engine, gameServer *game.GameServer) {
 	// Retrieve the final scores after a game session
 	router.GET("/final-scores/:sessionId", gameServer.FinalScoresHandler)
 
+	router.GET("/leaderboard", gameServer.GetLeaderboardHandler) // Endpoint to get leaderboard
+
 	// WebSocket endpoint for real-time interactions
 	router.GET("/ws", gameServer.WebSocketEndpoint)
 

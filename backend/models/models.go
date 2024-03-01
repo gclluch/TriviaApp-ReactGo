@@ -28,3 +28,10 @@ type Player struct {
 type SessionRequest struct {
 	SessionId string `json:"sessionId"` // Identifier for the session involved in the request
 }
+
+// Player Scores
+type LeaderboardEntry struct {
+	PlayerID       string `json:"playerId"`
+	RightAnswers   int    `json:"RightAnswers"`
+	TotalQuestions int    `json:"totalQuestions"`
+}
