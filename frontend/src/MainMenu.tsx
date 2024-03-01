@@ -1,7 +1,8 @@
+// MainMenu.tsx
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-const MainMenu = () => {
+const MainMenu: React.FC = () => {
   const menuItems = [
     { path: "/singleplayer", label: "Single Player" },
     { path: "/multiplayer", label: "Multiplayer" },

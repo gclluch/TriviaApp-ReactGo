@@ -1,7 +1,7 @@
-// LoadingIndicator.js
+// LoadingIndicator.tsx
 import React from 'react';
 
-const LoadingIndicator = () => (
+const LoadingIndicator: React.FC = () => (
   <div className="loading-container">
     <div aria-live="polite" className="loading">Loading...</div>
   </div>

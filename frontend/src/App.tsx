@@ -7,17 +7,16 @@ import StartGameComponent from './StartGameComponent';
 import JoinGameComponent from './JoinGameComponent';
 import MultiplayerGame from "./MultiplayerGame";
 import FinalScores from "./FinalScores";
+import Leaderboard from "./Leaderboard";
 
-function App() {
-  const [theme, setTheme] = useState('dark');
+const App: React.FC = () => {
+  const [theme, setTheme] = useState<string>('dark');
 
-  // Effect for applying theme consistently across the application
   useEffect(() => {
     document.body.setAttribute('data-theme', theme);
   }, [theme]);
 
-  // Function to toggle between light and dark theme
-  const toggleTheme = () => {
+  const toggleTheme = (): void => {
     setTheme(current => current === 'light' ? 'dark' : 'light');
   };
 
@@ -27,6 +26,7 @@ function App() {
         <header className="app-header">
           <button onClick={toggleTheme} className="header-button">Toggle Theme</button>
           <Link to="/"><button className="main-menu-button">Main Menu</button></Link>
+          <Link to="/leaderboard"><button className="header-button">Leaderboard</button></Link>
         </header>
         <main>
           <Routes>
@@ -36,6 +36,7 @@ function App() {
             <Route path="/join/:sessionId" element={<JoinGameComponent />} />
             <Route path="/game/:sessionId" element={<MultiplayerGame />} />
             <Route path="/final-scores/:sessionId" element={<FinalScores />} />
+            <Route path="/leaderboard" element={<Leaderboard />} />
           </Routes>
         </main>
       </div>

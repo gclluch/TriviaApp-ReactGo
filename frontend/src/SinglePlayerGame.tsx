@@ -5,22 +5,36 @@ import LoadingIndicator from './LoadingIndicator';
 import ErrorMessage from './ErrorMessage';
 import StartGameButton from './StartGameButton';
 
-const API_BASE = process.env.REACT_APP_BACKEND_URL || "http://localhost:8080";
+interface Question {
+  id: string; // Adjust according to actual structure
+  questionText: string;
+  options: string[];
+}
 
-const SinglePlayerGame = () => {
-  const [gameSession, setGameSession] = useState(null);
-  const [questions, setQuestions] = useState([]);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [score, setScore] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+interface GameStartResponse {
+  sessionId: string;
+}
+
+interface AnswerResponse {
+  correct: boolean;
+}
+
+const API_BASE: string = process.env.REACT_APP_BACKEND_URL || "http://localhost:8080";
+
+const SinglePlayerGame: React.FC = () => {
+  const [gameSession, setGameSession] = useState<string | null>(null);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
+  const [score, setScore] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
 
   const startGame = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
       const startResponse = await fetch(`${API_BASE}/game/start`, { method: "POST" });
-      const startData = await startResponse.json();
+      const startData: GameStartResponse = await startResponse.json();
       setGameSession(startData.sessionId);
 
       const questionsResponse = await fetch(`${API_BASE}/questions/${startData.sessionId}`);
@@ -33,7 +47,7 @@ const SinglePlayerGame = () => {
     }
   }, []);
 
-  const submitAnswer = useCallback(async (index) => {
+  const submitAnswer = useCallback(async (index: number) => {
     const currentQuestion = questions[currentQuestionIndex];
     try {
       const answerResponse = await fetch(`${API_BASE}/answer`, {
@@ -45,7 +59,7 @@ const SinglePlayerGame = () => {
           answer: index,
         }),
       });
-      const answerData = await answerResponse.json();
+      const answerData: AnswerResponse = await answerResponse.json();
       if (answerData.correct) {
         setScore((prevScore) => prevScore + 10); // Assuming each correct answer adds one point
       }

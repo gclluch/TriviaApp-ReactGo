@@ -1,15 +1,31 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+// WebSocketContext.tsx
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-const WebSocketContext = createContext({
+// Define an interface for the context value
+interface WebSocketContextValue {
+  webSocket: WebSocket | null;
+  isConnected: boolean;
+}
+
+// Define an interface for the WebSocketProvider props
+interface WebSocketProviderProps {
+  children: ReactNode;
+  url?: string;
+}
+
+// Create context with an initial value
+const WebSocketContext = createContext<WebSocketContextValue>({
   webSocket: null,
   isConnected: false,
 });
 
-export const useWebSocket = () => useContext(WebSocketContext);
+// Custom hook to use the WebSocket context
+export const useWebSocket = (): WebSocketContextValue => useContext(WebSocketContext);
 
-export const WebSocketProvider = ({ children, url = 'ws://localhost:8080/ws' }) => {
-  const [webSocket, setWebSocket] = useState(null);
-  const [isConnected, setIsConnected] = useState(false);
+// WebSocketProvider component
+export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children, url = 'ws://localhost:8080/ws' }) => {
+  const [webSocket, setWebSocket] = useState<WebSocket | null>(null);
+  const [isConnected, setIsConnected] = useState<boolean>(false);
 
   useEffect(() => {
     const ws = new WebSocket(url);
@@ -19,7 +35,7 @@ export const WebSocketProvider = ({ children, url = 'ws://localhost:8080/ws' }) 
       setIsConnected(true);
     };
 
-    const onMessage = (event) => {
+    const onMessage = (event: MessageEvent) => {
       console.log('Received message:', event.data);
     };
 
@@ -28,7 +44,7 @@ export const WebSocketProvider = ({ children, url = 'ws://localhost:8080/ws' }) 
       setIsConnected(false);
     };
 
-    const onError = (error) => {
+    const onError = (error: Event) => {
       console.error('WebSocket Error:', error);
       setIsConnected(false);
     };
