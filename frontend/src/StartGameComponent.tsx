@@ -1,30 +1,30 @@
-import React, { useState } from 'react';
+import React, { ChangeEvent, useState } from 'react'; // 1
 import { useNavigate } from 'react-router-dom';
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL || "http://localhost:8080";
 
-const StartGameComponent = () => {
+const StartGameComponent: React.FC = () => { // 2
   const navigate = useNavigate();
-  const [shareableLink, setShareableLink] = useState("");
-  const [numQuestions, setNumQuestions] = useState(10); // State to hold the number of questions
+  const [shareableLink, setShareableLink] = useState<string>(""); // 3
+  const [numQuestions, setNumQuestions] = useState<number>(10); // 4
 
   const startNewGame = async () => {
     try {
       const response = await fetch(`${API_BASE}/game/start`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ numQuestions }), // Send the number of questions to the backend
+        body: JSON.stringify({ numQuestions }),
       });
-      const data = await response.json();
+      const data: { sessionId: string } = await response.json(); // 5
       setShareableLink(`${window.location.origin}/join/${data.sessionId}`);
-      navigate(`/join/${data.sessionId}`); // Navigate to the shareable link
+      navigate(`/join/${data.sessionId}`);
     } catch (error) {
       console.error("Failed to start a new game:", error);
     }
   };
 
-  const handleNumQuestionsChange = (e) => {
-    const value = Math.max(1, Math.min(50, Number(e.target.value))); // Ensure value is between 1 and 20
+  const handleNumQuestionsChange = (e: ChangeEvent<HTMLInputElement>) => { // 6
+    const value = Math.max(1, Math.min(50, Number(e.target.value)));
     setNumQuestions(value);
   };
 
@@ -39,14 +39,14 @@ const StartGameComponent = () => {
           value={numQuestions}
           onChange={handleNumQuestionsChange}
           min="1"
-          max="20"
+          max="50" // 7
         />
       </div>
       <button onClick={startNewGame}>Create Multiplayer Session</button>
       {shareableLink && (
         <>
           <p>Shareable link generated:</p>
-          <input type="text" value={shareableLink} readOnly onFocus={(e) => e.target.select()} />
+          <input type="text" value={shareableLink} readOnly onFocus={(e: ChangeEvent<HTMLInputElement>) => e.target.select()} /> // 8
         </>
       )}
     </div>
