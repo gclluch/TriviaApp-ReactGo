@@ -35,3 +35,13 @@ type LeaderboardEntry struct {
 	RightAnswers   int    `json:"RightAnswers"`
 	TotalQuestions int    `json:"totalQuestions"`
 }
+
+// APIQuestion represents a question from the Open Trivia Database API.
+type APIQuestion struct {
+	Category         string   `json:"category"`
+	Type             string   `json:"type"`
+	Difficulty       string   `json:"difficulty"`
+	Question         string   `json:"question"`
+	CorrectAnswer    string   `json:"correct_answer"`
+	IncorrectAnswers []string `json:"incorrect_answers"`
+}

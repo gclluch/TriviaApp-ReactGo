@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/gclluch/captrivia_multiplayer/models"
 	"github.com/gclluch/captrivia_multiplayer/services"
+
 	"github.com/gclluch/captrivia_multiplayer/session"
 	"github.com/google/uuid"
 )
@@ -25,7 +25,7 @@ func NewSessionStore() *SessionStore {
 
 // CreateSession creates a new game session with a subset of questions and returns its unique ID.
 // It shuffles the questions and selects the specified number to include in the session.
-func (s *SessionStore) CreateSession(questions []models.Question, numQuestions int) (string, error) {
+func (s *SessionStore) CreateSession(numQuestions int) (string, error) {
 	if numQuestions <= 0 {
 		return "", fmt.Errorf("numQuestions must be positive")
 	}
@@ -36,15 +36,23 @@ func (s *SessionStore) CreateSession(questions []models.Question, numQuestions i
 	// Generate a unique session ID.
 	sessionID := uuid.New().String()
 
+	questions, err := services.FetchQuestions(numQuestions)
+	if err != nil {
+		return "", err
+	}
+
 	// Shuffle questions first to ensure randomness between sessions.
-	shuffledQuestions := services.ShuffleQuestions(questions)
+	// shuffledQuestions := services.ShuffleQuestions(questions)
 
 	// Select the desired number of questions for the session
-	selectedQuestions := shuffledQuestions[:numQuestions]
+	// selectedQuestions := shuffledQuestions[:numQuestions]
 
 	playerSession := session.NewPlayerSession()
-	playerSession.Questions = selectedQuestions
 
+	// playerSession.Questions = services.fetchQuestions(numQuestions)
+	// selectedQuestions
+
+	playerSession.Questions = questions
 	s.Sessions[sessionID] = playerSession
 
 	return sessionID, nil

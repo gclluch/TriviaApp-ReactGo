@@ -49,7 +49,7 @@ func (gs *GameServer) StartGameHandler(c *gin.Context) {
 	}
 
 	numQuestions := services.Clamp(requestBody.NumQuestions, 1, len(gs.Questions))
-	sessionID, err := gs.Store.CreateSession(gs.Questions, numQuestions)
+	sessionID, err := gs.Store.CreateSession(numQuestions)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create session"})
 		return

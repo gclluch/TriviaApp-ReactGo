@@ -24,7 +24,7 @@ const StartGameComponent = () => {
   };
 
   const handleNumQuestionsChange = (e) => {
-    const value = Math.max(1, Math.min(20, Number(e.target.value))); // Ensure value is between 1 and 20
+    const value = Math.max(1, Math.min(50, Number(e.target.value))); // Ensure value is between 1 and 20
     setNumQuestions(value);
   };
 
