@@ -113,7 +113,7 @@ func (gs *GameServer) AnswerHandler(c *gin.Context) {
 	}
 
 	// Validate the answer and update the score
-	correct, questionExists := services.CheckAnswer(gs.Questions, submission.QuestionID, submission.Answer)
+	correct, questionExists := services.CheckAnswer(session.Questions, submission.QuestionID, submission.Answer)
 	if !questionExists {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Question not found"})
 		return

@@ -18,7 +18,7 @@ type PlayerSession struct {
 	Score             int                       // Single player score or multiplayer high score.
 	Players           map[string]*models.Player // Players participating in the session.
 	Connections       map[*websocket.Conn]bool  // Active WebSocket connections.
-	Questions         []models.Question         // Session questions.
+	Questions         []models.Question         // Map of question ID to Question.
 	AnsweredQuestions map[string]bool           // Tracks if a question has been answered correctly.
 }
 

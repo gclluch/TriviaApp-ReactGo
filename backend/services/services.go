@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/gclluch/captrivia_multiplayer/models"
@@ -37,15 +38,14 @@ func ShuffleQuestions(questions []models.Question) []models.Question {
 	return questions
 }
 
-// CheckAnswer verifies if the provided answer index for a question is correct.
-// Returns a boolean indicating correctness and a boolean indicating if the question was found.
-func CheckAnswer(questions []models.Question, questionID string, answerIndex int) (bool, bool) {
-	for _, q := range questions {
-		if q.ID == questionID {
-			return q.CorrectIndex == answerIndex, true
-		}
+func CheckAnswer(questions []models.Question, questionIDStr string, answerIndex int) (bool, bool) {
+	questionID, err := strconv.Atoi(questionIDStr) // Convert questionID from string to int
+	if err != nil || questionID < 0 || questionID >= len(questions) {
+		return false, false // QuestionID is not a valid index
 	}
-	return false, false // Question not found
+
+	question := questions[questionID]
+	return question.CorrectIndex == answerIndex, true
 }
 
 // Helper function to get the minimum of two integers

@@ -67,7 +67,6 @@ const SinglePlayerGame: React.FC = () => {
         });
         const answerData: AnswerResponse = await answerResponse.json();
 
-        console.log(answerData)
         if (answerData.correct) {
           setScore(prevScore => prevScore + 10); // Assuming each correct answer adds one point
         }

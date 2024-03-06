@@ -41,20 +41,13 @@ func (s *SessionStore) CreateSession(numQuestions int) (string, error) {
 		return "", err
 	}
 
-	// Shuffle questions first to ensure randomness between sessions.
-	// shuffledQuestions := services.ShuffleQuestions(questions)
-
-	// Select the desired number of questions for the session
-	// selectedQuestions := shuffledQuestions[:numQuestions]
-
 	playerSession := session.NewPlayerSession()
 
-	// playerSession.Questions = services.fetchQuestions(numQuestions)
-	// selectedQuestions
-
 	playerSession.Questions = questions
+
 	s.Sessions[sessionID] = playerSession
 
+	fmt.Println(playerSession.Questions)
 	return sessionID, nil
 }
 
