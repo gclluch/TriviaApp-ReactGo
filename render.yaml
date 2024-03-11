@@ -1,0 +1,37 @@
+services:
+  # Backend service configuration
+  - type: web
+    name: go-backend
+    env: go
+    buildCommand: cd backend && go build -o main
+    startCommand: ./main
+    envVars:
+      - key: DB_HOST
+        fromDatabase:
+          name: captrivia-database
+          property: host
+      - key: DB_USER
+        value: postgres
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: captrivia-database
+          property: password
+      - key: DB_NAME
+        value: captrivia
+      - key: DB_PORT
+        value: "5432"
+    healthCheckPath: /
+    disk:
+      name: backend-disk
+      mountPath: /app
+      sizeGB: 10
+
+  # Frontend service configuration
+  - type: web
+    name: react-frontend
+    env: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/build
+    envVars:
+      - key: REACT_APP_BACKEND_URL
+        value: "http://go-backend:8080"
