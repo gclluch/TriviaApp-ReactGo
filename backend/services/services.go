@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gclluch/captrivia_multiplayer/models"
+	"github.com/gclluch/TriviaApp-ReactGo/models"
 )
 
 // LoadQuestions loads questions from a JSON file specified by filename.

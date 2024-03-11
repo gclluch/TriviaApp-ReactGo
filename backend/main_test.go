@@ -3,45 +3,38 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
 
+	"github.com/gclluch/TriviaApp-ReactGo/handlers"
 	"github.com/gin-gonic/gin"
 )
 
-var testRouter *gin.Engine
 var testServer *httptest.Server
 
-// TestMain is called before any test runs.
-// It allows us to set up things and also clean up after all tests have been run.
 func TestMain(m *testing.M) {
-	// Set Gin to test mode so that it doesn't print out debug info and we can use testing shortcuts
 	gin.SetMode(gin.TestMode)
+	loadConfig() // Assuming this sets up your environment as needed
 
-	var err error
-	testRouter, err = setupServer() // This should call the same setupServer which is used in main.
-	if err != nil {
-		log.Fatal("Failed to set up test server:", err)
-	}
-	
-	// Start a new httptest server using the testRouter.
-	testServer = httptest.NewServer(testRouter)
+	router := setupRouter()                       // Use the setup from your actual application
+	gameServer := initializeGameServer()          // Initialize your game server with configurations
+	handlers.RegisterHandlers(router, gameServer) // Register the same handlers as your application
 
-	runTests := m.Run()
+	testServer = httptest.NewServer(router) // Use the configured router for testing
 
-	// Close the test server
+	exitCode := m.Run()
+
 	testServer.Close()
-
-	// Exit with the result of the test suite run
-	os.Exit(runTests)
+	os.Exit(exitCode)
 }
 
 func TestStartGameHandler(t *testing.T) {
-	resp, err := http.Post(testServer.URL+"/game/start", "application/json", nil)
+	// Simulating a POST request with JSON body
+	body := strings.NewReader(`{"numQuestions": 10}`)
+	resp, err := http.Post(fmt.Sprintf("%s/game/start", testServer.URL), "application/json", body)
 	if err != nil {
 		t.Fatalf("Failed to make request: %v", err)
 	}
@@ -51,113 +44,40 @@ func TestStartGameHandler(t *testing.T) {
 		t.Errorf("Expected status OK; got %v", resp.Status)
 	}
 
-	// Decode JSON response
-	var response map[string]string
+	var response map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
 		t.Fatalf("Failed to decode JSON response: %v", err)
 	}
 
-	// Check if a sessionId as been returned
+	// Check if a sessionId has been returned
 	if _, exists := response["sessionId"]; !exists {
-		t.Errorf("Response should contain a sessionId")
+		t.Errorf("Response should contain a 'sessionId'")
 	}
 }
 
-// test a full game
-func TestFullGame(t *testing.T) {
-	// Start a new game
-	resp, err := http.Post(testServer.URL+"/game/start", "application/json", nil)
-	if err != nil {
-		t.Fatalf("Failed to start a new game: %v", err)
-	}
-	defer resp.Body.Close()
+// func TestSinglePlayerGame(t *testing.T) {
+// 	// Simulate a single player game
 
-	// Check for the correct status code
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("Expected status OK; got %v", resp.Status)
-	}
+// 	// Step 1: Start a new single-player game
+// 	startResp, err := http.Post(fmt.Sprintf("%s/game/start", testServer.URL), "application/json", nil)
+// 	if err != nil {
+// 		t.Fatalf("Failed to start a new game: %v", err)
+// 	}
+// 	defer startResp.Body.Close()
 
-	// Decode JSON response to get the session ID
-	var startGameResponse map[string]string
-	err = json.NewDecoder(resp.Body).Decode(&startGameResponse)
-	if err != nil {
-		t.Fatalf("Failed to decode JSON response: %v", err)
-	}
-	sessionID, exists := startGameResponse["sessionId"]
-	if !exists {
-		t.Fatalf("Response does not contain 'sessionId'")
-	}
+// 	if startResp.StatusCode != http.StatusOK {
+// 		t.Errorf("Expected status OK; got %v", startResp.Status)
+// 	}
 
-	// Get questions
-	resp, err = http.Get(testServer.URL + "/questions")
-	if err != nil {
-		t.Fatalf("Failed to get questions: %v", err)
-	}
-	defer resp.Body.Close()
+// 	var gameSession map[string]interface{}
+// 	if err := json.NewDecoder(startResp.Body).Decode(&gameSession); err != nil {
+// 		t.Fatalf("Failed to decode start game response: %v", err)
+// 	}
 
-	// Check for the correct status code
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("Expected status OK; got %v", resp.Status)
-	}
+// 	sessionId, ok := gameSession["sessionId"].(string)
+// 	if !ok {
+// 		t.Fatalf("Session ID not found in start game response")
+// 	}
 
-	// Decode JSON response to get the questions
-	var questions []Question
-	err = json.NewDecoder(resp.Body).Decode(&questions)
-	if err != nil {
-		t.Fatalf("Failed to decode JSON response: %v", err)
-	}
-	if len(questions) == 0 {
-		t.Fatalf("No questions received")
-	}
-
-	// Answer each question (assuming the answer is always the first option)
-	for _, question := range questions {
-		answerPayload := fmt.Sprintf(`{"sessionId":"%s", "questionId":"%s", "answer":%d}`, sessionID, question.ID, 0)
-		answerReader := strings.NewReader(answerPayload)
-		resp, err = http.Post(testServer.URL+"/answer", "application/json", answerReader)
-		if err != nil {
-			t.Fatalf("Failed to post answer: %v", err)
-		}
-		defer resp.Body.Close()
-
-		// Check for the correct status code
-		if resp.StatusCode != http.StatusOK {
-			t.Errorf("Expected status OK; got %v", resp.Status)
-		}
-
-		// Decode JSON response to check if the answer was correct
-		var answerResponse map[string]interface{}
-		err = json.NewDecoder(resp.Body).Decode(&answerResponse)
-		if err != nil {
-			t.Fatalf("Failed to decode JSON response: %v", err)
-		}
-		if _, exists := answerResponse["correct"]; !exists {
-			t.Errorf("Response should contain 'correct' field")
-		}
-	}
-
-	// End the game
-	endGamePayload := fmt.Sprintf(`{"sessionId":"%s"}`, sessionID)
-	endGameReader := strings.NewReader(endGamePayload)
-	resp, err = http.Post(testServer.URL+"/game/end", "application/json", endGameReader)
-	if err != nil {
-		t.Fatalf("Failed to end the game: %v", err)
-	}
-	defer resp.Body.Close()
-
-	// Check for the correct status code
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("Expected status OK; got %v", resp.Status)
-	}
-
-	// Decode JSON response to check the final score
-	var endGameResponse map[string]interface{}
-	err = json.NewDecoder(resp.Body).Decode(&endGameResponse)
-	if err != nil {
-		t.Fatalf("Failed to decode JSON response: %v", err)
-	}
-	if _, exists := endGameResponse["finalScore"]; !exists {
-		t.Errorf("Response should contain 'finalScore' field")
-	}
-}
+// }

@@ -8,10 +8,10 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/gclluch/captrivia_multiplayer/models"
-	"github.com/gclluch/captrivia_multiplayer/services"
-	"github.com/gclluch/captrivia_multiplayer/session"
-	"github.com/gclluch/captrivia_multiplayer/store"
+	"github.com/gclluch/TriviaApp-ReactGo/models"
+	"github.com/gclluch/TriviaApp-ReactGo/services"
+	"github.com/gclluch/TriviaApp-ReactGo/session"
+	"github.com/gclluch/TriviaApp-ReactGo/store"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
@@ -19,17 +19,15 @@ import (
 // GameServer struct encapsulates dependencies for the game logic.
 type GameServer struct {
 	Store       *store.SessionStore
-	Questions   []models.Question
 	Upgrader    websocket.Upgrader
 	Leaderboard []models.LeaderboardEntry
 	mutex       sync.Mutex
 }
 
 // NewGameServer initializes a new GameServer instance.
-func NewGameServer(store *store.SessionStore, questions []models.Question) *GameServer {
+func NewGameServer(store *store.SessionStore) *GameServer {
 	return &GameServer{
-		Store:     store,
-		Questions: questions,
+		Store: store,
 		Upgrader: websocket.Upgrader{
 			CheckOrigin: func(r *http.Request) bool {
 				return true // Allow all origins for demo purposes; adjust as necessary.
@@ -48,8 +46,7 @@ func (gs *GameServer) StartGameHandler(c *gin.Context) {
 		requestBody.NumQuestions = 10
 	}
 
-	numQuestions := services.Clamp(requestBody.NumQuestions, 1, len(gs.Questions))
-	sessionID, err := gs.Store.CreateSession(numQuestions)
+	sessionID, err := gs.Store.CreateSession(requestBody.NumQuestions)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create session"})
 		return

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/gclluch/captrivia_multiplayer/services"
+	"github.com/gclluch/TriviaApp-ReactGo/services"
 
-	"github.com/gclluch/captrivia_multiplayer/session"
+	"github.com/gclluch/TriviaApp-ReactGo/session"
 	"github.com/google/uuid"
 )
 

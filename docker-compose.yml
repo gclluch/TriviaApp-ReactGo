@@ -9,7 +9,7 @@ services:
       DB_HOST: db
       DB_USER: postgres
       DB_PASSWORD: postgres
-      DB_NAME: captrivia
+      DB_NAME: trivia_app
       DB_PORT: 5432
     depends_on:
       - db
@@ -43,7 +43,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: captrivia
+      POSTGRES_DB: trivia_app
     volumes:
       - type: volume
         source: postgres_data

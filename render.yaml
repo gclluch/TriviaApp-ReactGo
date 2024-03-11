@@ -8,16 +8,16 @@ services:
     envVars:
       - key: DB_HOST
         fromDatabase:
-          name: captrivia-database
+          name: trivia-app-database
           property: host
       - key: DB_USER
         value: postgres
       - key: DB_PASSWORD
         fromDatabase:
-          name: captrivia-database
+          name: trivia-app-database
           property: password
       - key: DB_NAME
-        value: captrivia
+        value: trivia-app
       - key: DB_PORT
         value: "5432"
     healthCheckPath: /

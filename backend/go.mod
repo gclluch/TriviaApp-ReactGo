@@ -1,4 +1,4 @@
-module github.com/gclluch/captrivia_multiplayer
+module github.com/gclluch/TriviaApp-ReactGo
 
 go 1.21.4
 

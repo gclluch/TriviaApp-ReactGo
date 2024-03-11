@@ -5,10 +5,9 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/gclluch/captrivia_multiplayer/game"
-	"github.com/gclluch/captrivia_multiplayer/handlers"
-	"github.com/gclluch/captrivia_multiplayer/services"
-	"github.com/gclluch/captrivia_multiplayer/store"
+	"github.com/gclluch/TriviaApp-ReactGo/game"
+	"github.com/gclluch/TriviaApp-ReactGo/handlers"
+	"github.com/gclluch/TriviaApp-ReactGo/store"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
@@ -35,7 +34,7 @@ func main() {
 
 func loadConfig() {
 	viper.SetDefault("PORT", "8080")
-	viper.SetDefault("QUESTIONS_FILE", "questions.json")
+	// viper.SetDefault("QUESTIONS_FILE", "questions.json")
 	viper.AutomaticEnv() // Read from environment variables
 }
 
@@ -51,12 +50,12 @@ func setupRouter() *gin.Engine {
 }
 
 func initializeGameServer() *game.GameServer {
-	questions, err := services.LoadQuestions(viper.GetString("QUESTIONS_FILE"))
-	if err != nil {
-		log.Fatalf("Failed to load questions: %v", err)
-	}
+	// questions, err := services.LoadQuestions(viper.GetString("QUESTIONS_FILE"))
+	// if err != nil {
+	// 	log.Fatalf("Failed to load questions: %v", err)
+	// }
 	sessionStore := store.NewSessionStore()
-	return game.NewGameServer(sessionStore, questions)
+	return game.NewGameServer(sessionStore)
 }
 
 func startServer(router *gin.Engine) {

@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"github.com/gclluch/captrivia_multiplayer/game"
+	"github.com/gclluch/TriviaApp-ReactGo/game"
 	"github.com/gin-gonic/gin"
 )
 
